@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import { registerAuthRoutes } from "./routes/auth.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerPostRoutes } from "./routes/posts.js";
 
@@ -12,6 +13,7 @@ await server.register(cors, {
 });
 
 await registerHealthRoutes(server);
+await registerAuthRoutes(server);
 await registerPostRoutes(server);
 
 const port = Number(process.env.PORT ?? 4000);
@@ -23,4 +25,3 @@ try {
   server.log.error(error);
   process.exit(1);
 }
-

@@ -37,5 +37,5 @@ MVP priorities:
 - [Legal and Platform Risk](docs/legal-and-platform-risk.md)
 - [Architecture](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
+- [GitHub Setup](docs/github-setup.md)
 - [ADR 0001: Do not generate or host music audio](docs/adr/0001-no-generated-audio.md)
-

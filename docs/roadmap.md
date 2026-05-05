@@ -6,6 +6,8 @@
 - [x] Legal and provider risk notes
 - [x] Initial architecture
 - [x] GitHub templates
+- [x] GitHub Actions draft
+- [x] GitHub setup guide
 - [ ] Create remote GitHub repository
 - [ ] Create GitHub Project board
 - [ ] Add initial issues from roadmap
@@ -23,10 +25,11 @@
 
 - [x] Create TypeScript API service shell
 - [x] Add PostgreSQL schema draft
-- [ ] Add auth/session skeleton
+- [x] Add auth/session skeleton
 - [ ] Add posts CRUD backed by database
 - [x] Add mock timeline endpoint
 - [x] Add provider adapter interfaces
+- [x] Add matching unit tests
 
 ## Phase 3: Spotify Integration
 
