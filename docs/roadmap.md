@@ -15,10 +15,10 @@
 ## Phase 1: iOS Apple Music Prototype
 
 - [x] Create iOS SwiftUI app shell
-- [ ] Add MusicKit authorization
-- [ ] Search Apple Music catalog
+- [x] Add MusicKit authorization skeleton
+- [x] Add Apple Music catalog search skeleton
 - [ ] Render track and album cards
-- [ ] Open Apple Music links
+- [x] Open provider links from post detail
 - [x] Create local mock timeline
 
 ## Phase 2: Backend MVP

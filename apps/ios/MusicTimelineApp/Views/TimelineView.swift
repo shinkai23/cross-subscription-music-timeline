@@ -89,6 +89,7 @@ private struct MusicPostRow: View {
 private struct MusicPostDetailView: View {
     let post: MusicPost
     let selectedProvider: MusicProvider
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -102,11 +103,14 @@ private struct MusicPostDetailView: View {
             Text(post.caption)
 
             Button {
-                // TODO: Open provider URL or resolved target-provider URL.
+                if let providerURL = post.providerURL {
+                    openURL(providerURL)
+                }
             } label: {
                 Label("Open in \(selectedProvider.displayName)", systemImage: "play.circle.fill")
             }
             .buttonStyle(.borderedProminent)
+            .disabled(post.providerURL == nil)
 
             Spacer()
         }
@@ -118,4 +122,3 @@ private struct MusicPostDetailView: View {
 #Preview {
     TimelineView(posts: MockTimelineService.posts, selectedProvider: .appleMusic)
 }
-
