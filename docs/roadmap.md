@@ -25,6 +25,7 @@
 
 - [x] Create TypeScript API service shell
 - [x] Add PostgreSQL schema draft
+- [x] Add local PostgreSQL docker compose
 - [x] Add auth/session skeleton
 - [ ] Add posts CRUD backed by database
 - [x] Add mock timeline endpoint
@@ -34,7 +35,7 @@
 ## Phase 3: Spotify Integration
 
 - [ ] Register Spotify app
-- [ ] Implement OAuth PKCE
+- [x] Add OAuth PKCE authorize URL skeleton
 - [ ] Import user-selected playlists
 - [ ] Store normalized playlist metadata
 - [ ] Open Spotify deep links
