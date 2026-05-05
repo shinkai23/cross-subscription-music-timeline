@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Provider policy research
+    url: https://developer.spotify.com/policy
+    about: Check Spotify policy before implementing provider-facing changes.
+  - name: Apple MusicKit
+    url: https://developer.apple.com/musickit/
+    about: Check Apple Music and MusicKit behavior before implementing Apple Music features.
+

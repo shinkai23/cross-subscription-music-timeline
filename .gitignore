@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+
+# Swift / Xcode
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Android
+.gradle/
+local.properties
+build/
+
+# Node
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+
+# Logs
+*.log
+
