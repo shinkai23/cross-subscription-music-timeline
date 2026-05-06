@@ -1,130 +1,130 @@
-# GitHub Backlog
+# GitHub バックログ
 
-Create these as GitHub Issues after the remote repository is created.
+リモートリポジトリ作成後、以下を GitHub Issues として登録します。
 
 ## Milestone: Foundation
 
-### 1. Confirm provider terms for MVP
+### 1. MVP 向け Provider 規約を確認する
 
 Labels: `legal-risk`, `research`
 
-Acceptance criteria:
+受け入れ条件:
 
-- Apple Music API and MusicKit terms are reviewed.
-- Spotify Developer Policy and Web API restrictions are reviewed.
-- The README and legal risk document are updated with current links and decisions.
+- Apple Music API と MusicKit の規約を確認する。
+- Spotify Developer Policy と Web API の制限を確認する。
+- README と法務リスク文書を最新リンクと判断内容で更新する。
 
-### 2. Create Xcode project and import SwiftUI shell
+### 2. Xcode プロジェクトを作成し SwiftUI 骨格を取り込む
 
 Labels: `feature`, `ios`
 
-Acceptance criteria:
+受け入れ条件:
 
-- Xcode project builds on latest stable Xcode.
-- Files under `apps/ios/MusicTimelineApp` are imported.
-- App launches to the timeline tab.
+- 最新安定版 Xcode でプロジェクトがビルドできる。
+- `apps/ios/MusicTimelineApp` 以下のファイルが取り込まれている。
+- アプリ起動時にタイムラインタブが表示される。
 
-### 3. Add Apple Music capability and authorization
-
-Labels: `feature`, `ios`, `apple-music`
-
-Acceptance criteria:
-
-- App requests MusicKit authorization.
-- App shows authorized, denied, and restricted states.
-- App checks Apple Music subscription status.
-
-### 4. Implement Apple Music catalog search
+### 3. Apple Music capability と認可処理を追加する
 
 Labels: `feature`, `ios`, `apple-music`
 
-Acceptance criteria:
+受け入れ条件:
 
-- User can search songs and albums.
-- Results show title, artist, artwork, and provider link.
-- Selected result can be used in a post draft.
+- アプリが MusicKit 認可を要求できる。
+- authorized、denied、restricted の状態を表示できる。
+- Apple Music サブスクリプション状態を確認できる。
 
-### 5. Run backend API locally
+### 4. Apple Music カタログ検索を実装する
+
+Labels: `feature`, `ios`, `apple-music`
+
+受け入れ条件:
+
+- ユーザーが曲とアルバムを検索できる。
+- 結果にタイトル、アーティスト、アートワーク、Provider リンクを表示できる。
+- 選択した結果を投稿下書きに使える。
+
+### 5. Backend API をローカル起動する
 
 Labels: `feature`, `backend`
 
-Acceptance criteria:
+受け入れ条件:
 
-- `GET /health` returns success.
-- `GET /posts` returns mock timeline data.
-- TypeScript typecheck passes in CI.
+- `GET /health` が成功する。
+- `GET /posts` がモックタイムラインを返す。
+- CI で TypeScript 型チェックが通る。
 
 ## Milestone: Playlist Conversion MVP
 
-### 6. Implement Spotify OAuth PKCE
+### 6. Spotify OAuth PKCE を実装する
 
 Labels: `feature`, `spotify`, `backend`
 
-Acceptance criteria:
+受け入れ条件:
 
-- User can connect Spotify with PKCE.
-- Granted scopes are stored.
-- Disconnect flow deletes provider account data.
+- ユーザーが PKCE で Spotify 連携できる。
+- 許可された scope を保存できる。
+- 連携解除時に Provider アカウントデータを削除できる。
 
-### 7. Import a Spotify playlist
+### 7. Spotify プレイリストを取り込む
 
 Labels: `feature`, `spotify`, `backend`
 
-Acceptance criteria:
+受け入れ条件:
 
-- User can paste or select a Spotify playlist.
-- Backend stores normalized playlist metadata.
-- Local files and unavailable tracks are marked clearly.
+- ユーザーが Spotify プレイリストを貼り付けまたは選択できる。
+- Backend が正規化したプレイリストメタデータを保存できる。
+- ローカルファイルや利用不可曲を明確に表示できる。
 
-### 8. Implement ISRC matching
+### 8. ISRC マッチングを実装する
 
 Labels: `feature`, `matching`
 
-Acceptance criteria:
+受け入れ条件:
 
-- Exact ISRC matches are marked as high confidence.
-- Title/artist fallback is used only when ISRC is unavailable.
-- Match reason and confidence are stored.
+- ISRC 完全一致を高信頼度として扱う。
+- ISRC がない場合だけ曲名・アーティスト fallback を使う。
+- マッチ理由と信頼度を保存する。
 
-### 9. Build playlist conversion review UI
+### 9. プレイリスト変換レビュー UI を作る
 
 Labels: `feature`, `ios`, `matching`
 
-Acceptance criteria:
+受け入れ条件:
 
-- Matched, review-needed, and unavailable tracks are visually distinct.
-- User can exclude unavailable or wrong matches.
-- User must explicitly confirm before playlist creation.
+- 一致、要確認、未対応の曲が見分けられる。
+- ユーザーが未対応曲や誤一致を除外できる。
+- プレイリスト作成前にユーザー確認を必須にする。
 
-### 10. Create Apple Music playlist from matched tracks
+### 10. マッチ済み曲から Apple Music プレイリストを作成する
 
 Labels: `feature`, `ios`, `apple-music`
 
-Acceptance criteria:
+受け入れ条件:
 
-- Confirmed tracks are written to a new Apple Music library playlist.
-- Failures show actionable messages.
-- Conversion result is recorded.
+- 確認済みの曲を Apple Music ライブラリ内の新規プレイリストに書き込める。
+- 失敗時に対処しやすいメッセージを表示する。
+- 変換結果を記録する。
 
 ## Milestone: Safety
 
-### 11. Add report and moderation data flow
+### 11. 通報とモデレーションのデータフローを追加する
 
 Labels: `feature`, `moderation`
 
-Acceptance criteria:
+受け入れ条件:
 
-- User can report a post.
-- Reports are stored with reason and details.
-- Copyright reason is available.
+- ユーザーが投稿を通報できる。
+- 通報理由と詳細を保存できる。
+- 著作権通報の理由を選べる。
 
-### 12. Add AI text assistance guardrails
+### 12. AI テキスト補助のガードレールを追加する
 
 Labels: `feature`, `ai`, `legal-risk`
 
-Acceptance criteria:
+受け入れ条件:
 
-- AI only generates captions, tags, and summaries.
-- Prompt rejects audio generation and full lyric requests.
-- Source content used by AI is logged at a high level for audit.
+- AI は紹介文、タグ、要約だけを生成する。
+- 音声生成と歌詞全文生成の要求を拒否する。
+- AI が参照した入力の種類を監査用に記録する。
 

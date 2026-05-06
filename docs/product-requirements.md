@@ -1,84 +1,83 @@
-# Product Requirements
+# 要件定義
 
-## Problem
+## 課題
 
-Music recommendations are fragmented by subscription service. A Spotify user may publish a playlist that an Apple Music user cannot easily recreate. Existing sharing usually stops at a link, which is weak when the receiver uses a different service.
+音楽の共有は、使っているサブスクリプションサービスによって分断されています。Spotify ユーザーが作ったプレイリストを Apple Music ユーザーが受け取っても、そのまま保存したり再現したりするのは面倒です。
 
-## Goal
+多くの共有はリンクを送るだけで終わります。しかし受け手が別サービスを使っている場合、そのリンクは体験として弱くなります。
 
-Build a mobile-first app where users post songs, albums, and playlists with personal context, and receivers can open or recreate that music in their own selected subscription service.
+## 目標
 
-## Target Users
+ユーザーが曲、アルバム、プレイリストを紹介文付きで投稿し、受け手が自分の選んだサブスクリプションサービスで開いたり、プレイリストを再現したりできるモバイルファーストのアプリを作ります。
 
-- Music fans who share playlists with friends.
-- Apple Music users who often receive Spotify links.
-- Spotify users who want their playlists to be understandable outside Spotify.
-- Developers/recruiters reviewing this as a portfolio project.
+## 対象ユーザー
 
-## MVP User Stories
+- 友人とプレイリストを共有したい音楽好き
+- Spotify リンクをよく受け取る Apple Music ユーザー
+- 自作プレイリストを Spotify 外の人にも届けたい Spotify ユーザー
+- ポートフォリオとして外部 API、モバイル、Backend、CI/CD、法務配慮を見たい採用担当者や開発者
 
-1. As a user, I can choose Apple Music or Spotify as my primary service.
-2. As a user, I can connect Apple Music on iOS and grant only the permissions needed.
-3. As a user, I can connect Spotify using OAuth PKCE.
-4. As a user, I can search for a song, album, or playlist from a supported service.
-5. As a user, I can post a music item with a short introduction.
-6. As a user, I can browse a timeline of posts from people I follow.
-7. As a user, I can tap a post and open it in my preferred service.
-8. As a user, I can recreate a posted playlist in my preferred service when matching succeeds.
-9. As a user, I can review unmatched or ambiguous tracks before creating a playlist.
-10. As a user, I can report copyright, abuse, spam, or misleading posts.
+## MVP ユーザーストーリー
 
-## Timeline Card
+1. ユーザーは Apple Music または Spotify をメインサービスとして選べる。
+2. ユーザーは iOS で Apple Music を連携し、必要な権限だけを許可できる。
+3. ユーザーは Spotify を OAuth PKCE で連携できる。
+4. ユーザーは対応サービスから曲、アルバム、プレイリストを検索できる。
+5. ユーザーは音楽アイテムに短い紹介文を付けて投稿できる。
+6. ユーザーはフォロー中の人の投稿をタイムラインで見られる。
+7. ユーザーは投稿をタップして、自分のメインサービスで開ける。
+8. ユーザーはマッチングが成功した投稿プレイリストを、自分のサービスに再現できる。
+9. ユーザーは未一致または曖昧な曲を、作成前に確認できる。
+10. ユーザーは著作権、迷惑行為、スパム、誤情報の投稿を通報できる。
 
-Each post should show:
+## タイムラインカード
 
-- Author
-- Music type: song, album, playlist
-- Title
-- Artist or playlist owner
-- Cover art from official provider where allowed
-- Short recommendation text
-- AI-assisted tags if accepted by the user
-- Match status for the current user's service
-- Primary action: open in selected service
-- Secondary action: recreate playlist, save, like, comment, report
+各投稿には次を表示します。
 
-## Playlist Recreation Flow
+- 投稿者
+- 音楽種別: 曲、アルバム、プレイリスト
+- タイトル
+- アーティストまたはプレイリスト所有者
+- Provider が許可する公式メタデータとアートワーク
+- 短い紹介文
+- ユーザーが承認した AI 補助タグ
+- 現在ユーザーのメインサービスに対するマッチング状態
+- メイン操作: 選択中サービスで開く
+- サブ操作: プレイリスト再現、保存、いいね、コメント、通報
 
-1. User opens a playlist post.
-2. Backend loads stored source playlist metadata.
-3. Matching service attempts target-service matches.
-4. UI shows:
-   - matched tracks
-   - candidate tracks
-   - unavailable tracks
-5. User confirms.
-6. App creates a playlist using the target service API.
-7. App writes a conversion result record for debugging and product metrics.
+## プレイリスト再現フロー
 
-## AI Scope
+1. ユーザーがプレイリスト投稿を開く。
+2. Backend が保存済みの元プレイリストメタデータを読み込む。
+3. マッチングサービスが変換先サービスで候補を探す。
+4. UI に一致、候補確認、未対応の曲を表示する。
+5. ユーザーが内容を確認する。
+6. ユーザーの明示的な操作で、変換先サービスにプレイリストを作成する。
+7. 変換結果を保存し、成功率や失敗理由を改善に使う。
 
-Allowed:
+## AI の利用範囲
 
-- Draft a recommendation caption from user notes.
-- Generate tags from metadata and the user's text.
-- Summarize a playlist's mood based on track names, artists, genres, and user-provided text.
-- Suggest post templates.
+許可すること:
 
-Not allowed:
+- ユーザーのメモから紹介文の下書きを作る。
+- メタデータとユーザー本文からタグを生成する。
+- 曲名、アーティスト名、ジャンル、ユーザー本文をもとにプレイリストの雰囲気を要約する。
+- 投稿テンプレートを提案する。
 
-- Generate a soundalike clip.
-- Recreate a copyrighted melody.
-- Train on Spotify Content or Apple Music content.
-- Analyze raw service audio.
-- Generate lyrics in the style of a specific artist.
+禁止すること:
 
-## Success Metrics
+- 曲に似た音声クリップを生成する。
+- 著作権のあるメロディを再現する。
+- Spotify Content や Apple Music 由来のコンテンツを学習に使う。
+- 生音源を分析または保存する。
+- 特定アーティスト風の歌詞を生成する。
 
-- Playlist match rate.
-- Playlist creation success rate.
-- Number of posts with cross-service opens.
-- Report rate.
-- Percentage of users who connect a service.
-- Time from opening a post to playing or saving music.
+## 成功指標
+
+- プレイリスト内の楽曲マッチ率
+- プレイリスト作成成功率
+- サービスをまたいで開かれた投稿数
+- 通報率
+- Provider 連携完了率
+- 投稿を開いてから再生または保存に至るまでの時間
 

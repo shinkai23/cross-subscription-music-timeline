@@ -1,48 +1,52 @@
-# Architecture
+# アーキテクチャ
 
-## System Overview
+## 全体像
 
 ```text
 iOS App
   SwiftUI
   MusicKit
-  Service auth UI
-  Timeline and playlist review
+  サービス認可 UI
+  タイムライン
+  プレイリスト変換レビュー
 
 Android App
   Jetpack Compose
-  Service auth UI
-  Timeline and playlist review
+  サービス認可 UI
+  タイムライン
+  プレイリスト変換レビュー
 
 Backend API
-  Auth/session
-  Posts
-  Timeline
-  Track metadata
-  Playlist conversion
-  Moderation
+  認証 / セッション
+  投稿
+  タイムライン
+  楽曲メタデータ
+  プレイリスト変換
+  モデレーション
 
 Workers
-  Metadata refresh
-  Cross-service matching
-  Conversion result analysis
+  メタデータ更新
+  サービス間マッチング
+  変換結果分析
 
 Database
   PostgreSQL
 ```
 
-## Backend Modules
+## Backend モジュール
 
-- `auth`: app sessions and provider account linking
-- `providers`: Apple Music and Spotify adapters
-- `catalog`: normalized track, album, artist, and playlist metadata
-- `posts`: user posts and timeline queries
-- `matching`: cross-service track matching
-- `conversion`: target playlist creation
-- `moderation`: reports, takedowns, blocks
-- `ai`: text-only caption/tag assistance
+- `auth`: アプリのセッションと Provider アカウント連携
+- `providers`: Apple Music / Spotify アダプター
+- `catalog`: 正規化した曲、アルバム、アーティスト、プレイリストのメタデータ
+- `posts`: 投稿とタイムライン取得
+- `matching`: サービス間の楽曲マッチング
+- `conversion`: 変換先サービスでのプレイリスト作成
+- `moderation`: 通報、削除、ブロック
+- `ai`: テキスト限定の紹介文・タグ補助
 
-## Provider Adapter Interface
+## Provider Adapter
+
+Provider ごとの差を Backend 内に閉じ込めるため、Apple Music と Spotify は共通インターフェースで扱います。
 
 ```ts
 type Provider = "apple_music" | "spotify";
@@ -57,17 +61,17 @@ interface MusicProviderAdapter {
 }
 ```
 
-## Matching Strategy
+## マッチング戦略
 
-Priority:
+優先順位:
 
-1. ISRC exact match
-2. title + primary artist + album
-3. title + primary artist + duration tolerance
-4. normalized title without version suffixes
-5. user-selected candidate
+1. ISRC 完全一致
+2. 曲名 + メインアーティスト + アルバム
+3. 曲名 + メインアーティスト + 再生時間の近さ
+4. バージョン表記を正規化した曲名
+5. ユーザーが候補から選択
 
-Track matching must store confidence and reason:
+マッチング結果には、信頼度と理由を保存します。
 
 ```text
 track_matches
@@ -80,7 +84,7 @@ track_matches
   created_at
 ```
 
-## Data Model Draft
+## データモデル案
 
 ```text
 users
@@ -144,26 +148,26 @@ reports
   status
 ```
 
-## iOS First Plan
+## iOS 優先方針
 
-Use SwiftUI and MusicKit first because Apple Music is the priority and iOS provides the strongest native integration.
+Apple Music を重視するため、最初は SwiftUI と MusicKit を中心に作ります。
 
-Initial iOS screens:
+初期画面:
 
-- service selection
-- Apple Music authorization
-- timeline
-- post composer
-- playlist conversion review
-- profile
-- report sheet
+- サービス選択
+- Apple Music 認可
+- タイムライン
+- 投稿作成
+- プレイリスト変換レビュー
+- プロフィール
+- 通報シート
 
-## Security
+## セキュリティ
 
-- Store provider tokens encrypted on backend.
-- Use PKCE for Spotify mobile auth.
-- Keep Apple private key server-side only.
-- Use short-lived app sessions.
-- Scope provider permissions narrowly.
-- Add account disconnect and token revocation/deletion path.
+- Provider token は Backend で暗号化保存する。
+- Spotify のモバイル認可は PKCE を使う。
+- Apple Music の秘密鍵はサーバー側だけで扱う。
+- アプリセッションは短めにする。
+- Provider 権限 scope は最小限にする。
+- アカウント連携解除とデータ削除導線を用意する。
 

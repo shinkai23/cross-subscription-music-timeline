@@ -1,24 +1,24 @@
 ---
-name: Legal or platform risk
-about: Track copyright, provider policy, privacy, or App Store risk
+name: 法務・プラットフォームリスク
+about: 著作権、Provider 規約、プライバシー、App Store 審査リスクを管理する
 title: "[Risk] "
 labels: legal-risk
 assignees: ""
 ---
 
-## Risk
+## リスク内容
 
-Describe the risk and affected feature.
+影響を受ける機能と、想定されるリスクを書いてください。
 
-## Source
+## 根拠
 
-Link to provider docs, policy, or legal text.
+Provider ドキュメント、規約、ポリシー、法務文書へのリンクを貼ってください。
 
-## Product Decision Needed
+## 必要な判断
 
-What needs to be decided?
+プロダクトまたは実装として、何を決める必要がありますか。
 
-## Proposed Mitigation
+## 緩和策案
 
 - [ ] 
 

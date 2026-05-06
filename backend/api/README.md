@@ -1,14 +1,14 @@
 # Backend API
 
-Fastify API for the music timeline app.
+音楽タイムラインアプリ用の Fastify API です。
 
-## Local Setup
+## ローカルセットアップ
 
-Requirements:
+必要なもの:
 
 - Node.js 22
 - npm
-- Docker for PostgreSQL
+- Docker
 
 ```bash
 cp .env.example .env
@@ -19,9 +19,9 @@ npm test
 npm run dev
 ```
 
-The API listens on `http://127.0.0.1:4000` by default.
+標準では `http://127.0.0.1:4000` で起動します。
 
-## Endpoints
+## エンドポイント
 
 - `GET /health`
 - `GET /auth/providers`
@@ -30,13 +30,13 @@ The API listens on `http://127.0.0.1:4000` by default.
 - `GET /posts`
 - `POST /posts`
 
-## Provider Tokens
+## Provider トークン
 
-Provider token handling is intentionally incomplete. The implementation must add encrypted storage before real Apple Music or Spotify refresh tokens are persisted.
+Provider のトークン保存はまだ本実装ではありません。Apple Music や Spotify の refresh token を保存する前に、暗号化保存と削除導線を実装する必要があります。
 
-## Safety Constraints
+## 安全制約
 
-- No raw audio storage.
-- No full lyric storage.
-- No scraping.
-- No Spotify restricted endpoints for new functionality.
+- 音楽音源を保存しない。
+- 歌詞全文を保存しない。
+- スクレイピングをしない。
+- 新規機能で Spotify の制限対象 API に依存しない。

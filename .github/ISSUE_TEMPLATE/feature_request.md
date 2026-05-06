@@ -1,30 +1,30 @@
 ---
-name: Feature request
-about: Propose product or engineering work
+name: 機能追加
+about: プロダクトまたは技術的な改善を提案する
 title: "[Feature] "
 labels: feature
 assignees: ""
 ---
 
-## Goal
+## 目的
 
-What user problem does this solve?
+この機能は、どのユーザー課題を解決しますか。
 
-## Scope
+## 対象範囲
 
-What is included?
+今回の Issue に含める作業を書いてください。
 
-## Out of Scope
+## 対象外
 
-What should not be changed?
+今回の Issue では変更しないことを書いてください。
 
-## Acceptance Criteria
+## 受け入れ条件
 
 - [ ] 
 
-## Provider / Legal Impact
+## Provider / 法務への影響
 
 - Apple Music:
 - Spotify:
-- Copyright / privacy:
+- 著作権 / プライバシー:
 

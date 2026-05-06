@@ -1,33 +1,33 @@
 # Contributing
 
-## Branches
+## ブランチ
 
-- `main`: stable, demo-ready branch
-- `feature/*`: product or engineering feature work
-- `risk/*`: legal, provider, privacy, or policy research
+- `main`: 常にデモ可能な安定ブランチ
+- `feature/*`: 機能追加または技術改善
+- `risk/*`: 法務、Provider、プライバシー、ポリシー調査
 
-## Pull Requests
+## Pull Request
 
-Every PR should explain:
+各 PR には次を記載します。
 
-- user-facing change
-- test coverage
-- provider or legal impact
-- screenshots for UI work
+- ユーザー向けの変更内容
+- テスト内容
+- Provider または法務への影響
+- UI 変更時のスクリーンショット
 
-## Commit Style
+## コミット方針
 
-Use short imperative commits:
+短く命令形にします。
 
 - `Add iOS timeline shell`
 - `Document Spotify preview restriction`
 - `Create provider adapter interface`
 
-## Safety Rules
+## 安全ルール
 
-- Do not add raw music audio files.
-- Do not add full lyrics.
-- Do not add scraping code.
-- Do not use provider content for model training.
-- Keep provider scopes minimal.
+- 音楽音源ファイルを追加しない。
+- 歌詞全文を追加しない。
+- スクレイピングコードを追加しない。
+- Provider コンテンツを AI モデル学習に使わない。
+- Provider の権限 scope は最小限にする。
 

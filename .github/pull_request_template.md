@@ -1,23 +1,23 @@
-## Summary
+## 概要
 
 - 
 
-## Screenshots / Demo
+## スクリーンショット / デモ
 
-N/A
+該当なし
 
-## Tests
+## テスト
 
-- [ ] Not run
-- [ ] Unit tests
-- [ ] UI tests
-- [ ] Manual verification
+- [ ] 未実行
+- [ ] 単体テスト
+- [ ] UI テスト
+- [ ] 手動確認
 
-## Provider / Legal Checklist
+## Provider / 法務チェック
 
-- [ ] No raw music audio is stored, generated, or redistributed.
-- [ ] Metadata and artwork display include required provider link-back where applicable.
-- [ ] Provider scopes are minimal for the feature.
-- [ ] No full lyrics or soundalike generation is introduced.
-- [ ] Spotify restricted APIs are not used for new functionality.
+- [ ] 音楽音源を保存、生成、再配布していない。
+- [ ] メタデータとアートワーク表示に必要な Provider へのリンクバックを含めている。
+- [ ] Provider の権限 scope は機能に必要な最小限になっている。
+- [ ] 歌詞全文や soundalike 生成を導入していない。
+- [ ] 新規機能で Spotify の制限対象 API に依存していない。
 

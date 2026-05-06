@@ -1,43 +1,45 @@
-# ADR 0001: Do Not Generate or Host Music Audio
+# ADR 0001: 音楽音源を生成・保存しない
 
-## Status
+## 状態
 
-Accepted
+採用
 
-## Context
+## 背景
 
-The product idea includes timeline posts for songs, albums, and playlists. A tempting feature is automatically generating part of a song or a preview clip. That creates serious copyright, licensing, provider-policy, and App Store review risk.
+このプロダクトでは、曲、アルバム、プレイリストをタイムラインに投稿します。そのため、曲の一部を自動生成したり、試聴クリップをアプリ側で用意したりしたくなります。
 
-Spotify also restricted several Web API features for new use cases on 2024-11-27, including 30-second preview URLs in multi-get responses. Provider preview availability should not be treated as stable infrastructure.
+しかし、その設計は著作権、ライセンス、Provider 規約、App Store 審査の面で大きなリスクになります。
 
-## Decision
+また Spotify は 2024-11-27 に Web API の一部機能を制限し、新規ユースケースでは 30 秒 preview URL などへ依存しにくくなりました。Provider の preview 機能を安定した基盤として扱うべきではありません。
 
-The app will not generate, host, cache, upload, or redistribute music audio.
+## 決定
 
-Playback and previews must use official provider functionality only:
+このアプリは、音楽音源を生成、保存、キャッシュ、アップロード、再配布しません。
 
-- Apple Music through MusicKit / Apple Music API where permitted.
-- Spotify through official links, Web API, SDK behavior, and Spotify app playback where permitted.
+再生や試聴は、公式 Provider の機能だけを使います。
 
-AI features are limited to text assistance:
+- Apple Music は、許可される範囲で MusicKit / Apple Music API を使う。
+- Spotify は、許可される範囲で公式リンク、Web API、SDK、Spotify アプリ再生を使う。
 
-- recommendation drafts
-- playlist summaries
-- tags
-- moderation support
+AI 機能はテキスト補助に限定します。
 
-## Consequences
+- 紹介文の下書き
+- プレイリスト要約
+- タグ生成
+- モデレーション補助
 
-Benefits:
+## 結果
 
-- Lower copyright and licensing risk.
-- Cleaner App Store review posture.
-- Less backend storage and security complexity.
-- Better alignment with provider terms.
+利点:
 
-Tradeoffs:
+- 著作権とライセンスのリスクを下げられる。
+- App Store 審査で説明しやすい。
+- バックエンドの保存容量とセキュリティ負荷を抑えられる。
+- Provider 規約に沿った設計にしやすい。
 
-- Timeline audio previews may be inconsistent across providers.
-- Spotify posts may need to rely on opening Spotify instead of inline preview.
-- The product must win through recommendation context and playlist recreation, not through embedded audio clips.
+トレードオフ:
+
+- タイムライン内の音声 preview は Provider ごとに一貫しない。
+- Spotify 投稿は、インライン再生ではなく Spotify を開く導線が中心になる可能性がある。
+- アプリの価値は音声クリップではなく、紹介文とプレイリスト再現体験で出す必要がある。
 

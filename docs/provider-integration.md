@@ -1,60 +1,60 @@
-# Provider Integration
+# Provider 連携設計
 
 ## Apple Music
 
-iOS is the primary platform, so Apple Music integration starts with MusicKit.
+iOS を最優先にするため、Apple Music 連携は MusicKit から始めます。
 
-Initial flow:
+初期フロー:
 
-1. Request MusicKit authorization in the iOS app.
-2. Check Apple Music subscription status.
-3. Search the Apple Music catalog.
-4. Open Apple Music URLs for songs, albums, and playlists.
-5. Create a user's library playlist only after explicit confirmation.
+1. iOS アプリで MusicKit 認可を要求する。
+2. Apple Music サブスクリプション状態を確認する。
+3. Apple Music カタログを検索する。
+4. 曲、アルバム、プレイリストの Apple Music URL を開く。
+5. ユーザーが明示的に確認した場合だけ、ライブラリ内にプレイリストを作成する。
 
-Server responsibility:
+サーバー側の責務:
 
-- Generate Apple Music developer tokens server-side.
-- Keep Apple private keys out of the mobile app.
-- Store only the minimum data needed for matching and conversion.
+- Apple Music developer token をサーバー側で生成する。
+- Apple の秘密鍵をモバイルアプリに含めない。
+- マッチングと変換に必要な最小限のデータだけ保存する。
 
 ## Spotify
 
-Use OAuth Authorization Code with PKCE for mobile clients.
+モバイルクライアントでは OAuth Authorization Code with PKCE を使います。
 
-Initial scopes:
+初期 scope:
 
 - `playlist-read-private`
 - `playlist-modify-private`
 - `playlist-modify-public`
 
-Avoid adding broader scopes until a concrete feature requires them.
+具体的な機能が必要になるまで、より広い scope は追加しません。
 
-Initial flow:
+初期フロー:
 
-1. Mobile client generates a PKCE code verifier and S256 code challenge.
-2. Backend builds the Spotify authorize URL with the code challenge.
-3. User authorizes with Spotify.
-4. App receives the authorization code through redirect URI.
-5. Token exchange is implemented with the verifier.
-6. Refresh token is stored encrypted if the backend owns long-running playlist operations.
+1. モバイルクライアントが PKCE code verifier と S256 code challenge を生成する。
+2. Backend が code challenge を含む Spotify 認可 URL を生成する。
+3. ユーザーが Spotify で認可する。
+4. アプリが redirect URI 経由で authorization code を受け取る。
+5. code verifier を使って token exchange を実装する。
+6. Backend が長時間の処理を担当する場合、refresh token を暗号化して保存する。
 
-## Cross-Service Matching
+## サービス間マッチング
 
-Matching should be metadata based:
+マッチングはメタデータベースにします。
 
 1. ISRC
-2. title + artist + album
-3. title + artist + duration
-4. user review
+2. 曲名 + アーティスト + アルバム
+3. 曲名 + アーティスト + 再生時間
+4. ユーザー確認
 
-Do not use Spotify audio analysis or audio features for new functionality. Do not analyze or store raw audio.
+新規機能で Spotify audio analysis や audio features を使いません。生音源の分析や保存もしません。
 
-## Playback
+## 再生
 
-Playback must remain provider-owned:
+再生は Provider 所有の体験として扱います。
 
-- Apple Music playback through MusicKit where permitted.
-- Spotify playback through official app links or SDK behavior.
+- Apple Music は許可される範囲で MusicKit を使う。
+- Spotify は公式アプリリンクまたは SDK の挙動を使う。
 
-Inline audio is optional and provider-dependent. The product must still work when no preview is available.
+インライン音声は任意機能であり、Provider に依存します。preview が存在しなくてもプロダクトが成立する設計にします。

@@ -1,23 +1,25 @@
-# iOS Prototype
+# iOS プロトタイプ
 
-This folder contains the SwiftUI source skeleton for the iOS-first prototype.
+このフォルダには、iOS 優先プロトタイプ用の SwiftUI ソース骨格を置いています。
 
-The current environment cannot run Xcode builds, so these files are organized to be copied into a new Xcode iOS app target named `MusicTimelineApp`.
+現在の作業環境は Windows のため、Xcode でのビルドや MusicKit の実機検証は行っていません。`apps/ios/MusicTimelineApp` 以下のファイルは、macOS 上で作成した Xcode プロジェクトへ取り込む前提です。
 
-## First Target
+## 最初の実装対象
 
-- SwiftUI app shell
-- service selection
-- mock timeline
-- post composer shell
-- playlist conversion review shell
-- Apple Music authorization service boundary
+- SwiftUI アプリの基本構成
+- Apple Music / Spotify のサービス選択
+- モックタイムライン
+- 投稿作成画面の骨格
+- プレイリスト変換レビュー画面
+- Apple Music 認可処理の境界
+- Apple Music カタログ検索の骨格
 
-## Xcode Setup Later
+## Xcode での取り込み手順
 
-1. Create a new iOS App project in Xcode.
-2. Name it `MusicTimelineApp`.
-3. Add the files under `apps/ios/MusicTimelineApp`.
-4. Enable MusicKit capability.
-5. Add required MusicKit usage descriptions.
+1. Xcode で新規 iOS App プロジェクトを作成する。
+2. プロジェクト名を `MusicTimelineApp` にする。
+3. `apps/ios/MusicTimelineApp` 以下の Swift ファイルを追加する。
+4. MusicKit capability を有効にする。
+5. Apple Music 利用目的の説明文を `Info.plist` に追加する。
+6. MusicKit 認可は実機 iPhone で確認する。
 

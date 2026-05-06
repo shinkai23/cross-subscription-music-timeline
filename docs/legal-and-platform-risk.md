@@ -1,103 +1,101 @@
-# Legal and Platform Risk
+# 法務・プラットフォームリスク
 
-This document is an engineering risk checklist, not legal advice. Before public launch, confirm with current Apple and Spotify terms and, if possible, a qualified lawyer.
+この文書はエンジニアリング上のリスク整理であり、法律助言ではありません。公開前には、最新の Apple と Spotify の規約を確認し、必要に応じて専門家に相談します。
 
-## Core Policy
+## 基本方針
 
-The app must treat streaming providers as the source of truth for playback and metadata. It should not host, redistribute, generate, or cache music audio.
+ストリーミング Provider を、再生とメタデータの正本として扱います。アプリは音楽音源をホスト、再配布、生成、キャッシュしません。
 
-## High-Risk Areas
+## 主要リスク
 
-### Audio Clips
+### 音声クリップ
 
-Do not generate song clips. Do not store preview audio. Do not bypass provider restrictions with third-party audio sources.
+曲の一部を自動生成しません。試聴音源を保存しません。Provider の制限を回避するために第三者の音源を使いません。
 
-Apple Music song resources may include preview assets. Use only official URLs and only in the way Apple permits.
+Apple Music の曲リソースには preview asset が含まれる場合がありますが、利用する場合は Apple が許可する方法だけに限定します。
 
-Spotify preview access is not reliable for new development. Spotify announced on 2024-11-27 that new Web API use cases no longer have access to several endpoints and functionality, including 30-second preview URLs in multi-get responses. Design the app without depending on Spotify previews.
+Spotify は 2024-11-27 に、新規 Web API ユースケースで 30 秒 preview URL などの一部機能を制限しました。そのため Spotify preview には依存しない設計にします。
 
-### Lyrics
+### 歌詞
 
-Do not support full lyric posting. If short quotes are allowed in the future, keep them short, user-entered, attributed where needed, and removable through moderation.
+歌詞全文投稿はサポートしません。将来、短い引用を扱う場合も、短く、ユーザー入力で、削除可能で、権利者対応できる設計にします。
 
-### Artwork and Metadata
+### アートワークとメタデータ
 
-Use cover art and metadata only with the required attribution and link-back behavior for each provider. Do not sell metadata or artwork as a standalone product.
+ジャケット画像やメタデータは、各 Provider が求める表示ルールとリンクバックを守って使います。メタデータやアートワーク単体を販売するような設計にはしません。
 
-Spotify policy states that metadata, cover art, and Audio Preview Clips must be accompanied by a link back to applicable Spotify content. Build link-back into the component design rather than relying on manual UI decisions.
+Spotify のポリシーでは、メタデータ、カバーアート、Audio Preview Clips には該当 Spotify コンテンツへのリンクバックが必要です。UI コンポーネント側にリンクバックを組み込みます。
 
-### Playlist Transfer
+### プレイリスト移行
 
-The safest product framing is user-directed metadata transfer:
+最も安全な見せ方は、ユーザー主導のメタデータ移行です。
 
-- A user chooses to post or import playlist metadata.
-- A receiving user explicitly chooses to recreate a playlist.
-- The app shows matched and unmatched tracks before writing to the user's library.
+- ユーザーが自分の意思でプレイリストメタデータを投稿または取り込む。
+- 受け手が自分の意思でプレイリスト再現を選ぶ。
+- 曖昧な曲や未一致の曲を作成前に表示する。
 
-Avoid:
+避けること:
 
-- scraping private playlists
-- silently copying playlists
-- copying local files
-- claiming perfect conversion
+- 非公開プレイリストのスクレイピング
+- ユーザー確認なしの自動コピー
+- ローカルファイルのコピー
+- 完全変換を保証する表現
 
 ### AI
 
-Do not use Spotify Content, Apple Music content, audio previews, artwork, or service-derived content to train a model.
+Spotify Content、Apple Music コンテンツ、音声 preview、アートワーク、Provider 由来コンテンツをモデル学習に使いません。
 
-AI should work from:
+AI が扱う対象は次に限定します。
 
-- user-written text
-- track titles
-- artist names
-- album names
-- genres when API terms allow display/use
+- ユーザーが書いた文章
+- 曲名
+- アーティスト名
+- アルバム名
+- Provider 規約上許可されるジャンルなどの表示用メタデータ
 
-### Privacy
+### プライバシー
 
-Only request scopes required for the visible task. Provide account disconnect and data deletion flows.
+見えている機能に必要な scope だけを要求します。アカウント連携解除とデータ削除導線を用意します。
 
-Store:
+保存するもの:
 
-- provider account id
-- provider type
-- encrypted refresh tokens where needed
-- granted scopes
-- timestamps
+- Provider アカウント ID
+- Provider 種別
+- 必要な場合のみ暗号化した refresh token
+- 許可された scope
+- タイムスタンプ
 
-Do not store:
+保存しないもの:
 
-- raw music audio
-- full private library snapshots unless needed and explicitly explained
-- unnecessary listening history
+- 生音源
+- 必要性を説明していないプライベートライブラリ全体
+- 不要な再生履歴
 
-## Provider Notes
+## Provider ごとの注意
 
 ### Apple Music
 
-Apple Music / MusicKit can support playback, library access, playlist creation, and catalog lookup after user authorization. Developer tokens must be handled securely and should not expose private keys in the client.
+Apple Music / MusicKit は、ユーザー認可後に再生、ライブラリ操作、プレイリスト作成、カタログ検索に使えます。Developer token の秘密鍵はクライアントに置かず、サーバー側で安全に扱います。
 
 ### Spotify
 
-Use OAuth Authorization Code with PKCE for mobile clients. Spotify iOS SDK playback control depends on the Spotify app, and on-demand track URI playback requires Premium. New apps should not rely on restricted endpoints such as audio analysis, audio features, recommendations, or preview URLs.
+モバイルでは OAuth Authorization Code with PKCE を使います。Spotify iOS SDK の再生制御は Spotify アプリに依存し、オンデマンド再生には Premium が必要です。新規アプリでは audio analysis、audio features、recommendations、preview URL などの制限対象 API に依存しない設計にします。
 
-## Moderation Requirements
+## モデレーション要件
 
-- Report post
-- Hide post
-- Delete own post
-- Block user
-- Admin takedown
-- Copyright complaint category
-- Audit log for moderation decisions
+- 投稿通報
+- 投稿非表示
+- 自分の投稿削除
+- ユーザーブロック
+- 管理者削除
+- 著作権通報カテゴリ
+- モデレーション判断の監査ログ
 
-## Launch Gate
+## 公開前チェック
 
-Before App Store or public beta:
-
-1. Re-check Apple Music API, MusicKit, Spotify Developer Terms, Spotify Developer Policy.
-2. Verify all metadata cards show required attribution and links.
-3. Verify disconnect and deletion flows.
-4. Verify no raw audio is persisted.
-5. Verify AI prompts cannot request soundalike audio or full lyrics.
+1. Apple Music API、MusicKit、Spotify Developer Terms、Spotify Developer Policy を再確認する。
+2. メタデータカードに必要な attribution とリンクバックがあることを確認する。
+3. アカウント連携解除とデータ削除導線を確認する。
+4. 生音源が保存されていないことを確認する。
+5. AI プロンプトが音声生成や歌詞全文生成を拒否できることを確認する。
 
