@@ -1,42 +1,22 @@
 # Backend API
 
-音楽タイムラインアプリ用の Fastify API です。
+ここから FastAPI backend を一から育てます。
 
-## ローカルセットアップ
+最初の目標は `GET /health` だけです。
 
-必要なもの:
-
-- Node.js 22
-- npm
-- Docker
+## Run
 
 ```bash
-cp .env.example .env
-docker compose up -d postgres
-npm install
-npm run typecheck
-npm test
-npm run dev
+cd backend/api
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 4000
 ```
 
-標準では `http://127.0.0.1:4000` で起動します。
+## Check
 
-## エンドポイント
+```bash
+curl http://127.0.0.1:4000/health
+```
 
-- `GET /health`
-- `GET /auth/providers`
-- `POST /auth/provider-connections`
-- `POST /auth/spotify/authorize-url`
-- `GET /posts`
-- `POST /posts`
-
-## Provider トークン
-
-Provider のトークン保存はまだ本実装ではありません。Apple Music や Spotify の refresh token を保存する前に、暗号化保存と削除導線を実装する必要があります。
-
-## 安全制約
-
-- 音楽音源を保存しない。
-- 歌詞全文を保存しない。
-- スクレイピングをしない。
-- 新規機能で Spotify の制限対象 API に依存しない。
