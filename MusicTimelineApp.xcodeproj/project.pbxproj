@@ -79,6 +79,8 @@
 				3063426D2FAAD1A100F8EAE4 /* MusicTimelineAppTests */,
 				306342772FAAD1A100F8EAE4 /* MusicTimelineAppUITests */,
 				3063425C2FAAD1A000F8EAE4 /* Products */,
+				306342952FAB0B8F00F8EAE4 /* Features */,
+				3063429C2FAB0B9A00F8EAE4 /* Support */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,6 +92,68 @@
 				306342742FAAD1A100F8EAE4 /* MusicTimelineAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		306342952FAB0B8F00F8EAE4 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				306342962FAB0B9A00F8EAE4 /* Timeline */,
+				306342972FAB0B9A00F8EAE4 /* Search */,
+				306342982FAB0B9A00F8EAE4 /* Likes */,
+				306342992FAB0B9A00F8EAE4 /* Compose */,
+				3063429A2FAB0B9A00F8EAE4 /* Account */,
+				3063429B2FAB0B9A00F8EAE4 /* Setup */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		306342962FAB0B9A00F8EAE4 /* Timeline */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Timeline;
+			sourceTree = "<group>";
+		};
+		306342972FAB0B9A00F8EAE4 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		306342982FAB0B9A00F8EAE4 /* Likes */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Likes;
+			sourceTree = "<group>";
+		};
+		306342992FAB0B9A00F8EAE4 /* Compose */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Compose;
+			sourceTree = "<group>";
+		};
+		3063429A2FAB0B9A00F8EAE4 /* Account */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Account;
+			sourceTree = "<group>";
+		};
+		3063429B2FAB0B9A00F8EAE4 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		3063429C2FAB0B9A00F8EAE4 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Support;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
