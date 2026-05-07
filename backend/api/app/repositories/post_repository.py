@@ -14,8 +14,8 @@ class PostRepository:
         statement = select(Post).order_by(Post.created_at.desc()).limit(limit).offset(offset)
         return list(self.db.scalars(statement).all())
 
-    def create_post(self, post_in: PostCreate) -> Post:
-        post = Post(**post_in.model_dump())
+    def create_post(self, post_in: PostCreate, user_id: str) -> Post:
+        post = Post(user_id=user_id, **post_in.model_dump())
         self.db.add(post)
         self.db.commit()
         self.db.refresh(post)

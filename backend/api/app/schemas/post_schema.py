@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 class PostCreate(BaseModel):
-    user_id: str
     item_type: str
     source_provider: str
     source_item_id: str
