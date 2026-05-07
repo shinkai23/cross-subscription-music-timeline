@@ -11,11 +11,11 @@ class Post(Base):
     __tablename__ = "posts"
 
     id: Mapped[str] = mapped_column(
-    String(36),
-    primary_key=True,
-    default=lambda: str(uuid4()),
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid4()),
     )
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     item_type: Mapped[str] = mapped_column(String(40))
     source_provider: Mapped[str] = mapped_column(String(40), index=True)
     source_item_id: Mapped[str] = mapped_column(String(160), index=True)
@@ -23,7 +23,7 @@ class Post(Base):
     visibility: Mapped[str] = mapped_column(String(40), default="public")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.now(timezone.utc),
+        default=lambda: datetime.now(timezone.utc),
         index=True,
     )
 
