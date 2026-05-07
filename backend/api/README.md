@@ -55,6 +55,10 @@ ruff check .
 pytest
 ```
 
+DB を使うテストは SQLite の in-memory database を使います。FastAPI の DB dependency を pytest fixture で差し替え、各テストごとに schema を作成・破棄します。
+
+本番・ローカル実行は PostgreSQL を使います。PostgreSQL 固有の挙動を検証する integration test は、provider 連携と migration 運用が固まった段階で追加します。
+
 ## 構成
 
 ```text
