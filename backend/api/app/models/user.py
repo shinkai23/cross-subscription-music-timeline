@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -22,3 +22,5 @@ class User(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
     )
+
+    service_accounts = relationship("ServiceAccount", back_populates="user")
