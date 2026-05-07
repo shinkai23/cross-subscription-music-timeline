@@ -15,6 +15,18 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: ./backend/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://music:music@postgres:5432/music_timeline
+      JWT_SECRET: local-development-secret
+      ENVIRONMENT: local
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres-data:
-
