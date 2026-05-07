@@ -28,3 +28,4 @@ class Post(Base):
     )
 
     user = relationship("User", back_populates="posts")
+    reports = relationship("Report", back_populates="post")
