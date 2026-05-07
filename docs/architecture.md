@@ -3,62 +3,42 @@
 ## 全体像
 
 ```text
-iOS App
-  SwiftUI
-  MusicKit
-  サービス認可 UI
-  タイムライン
-  プレイリスト変換レビュー
-
-Android App
-  Jetpack Compose
-  サービス認可 UI
-  タイムライン
-  プレイリスト変換レビュー
-
-Backend API
-  認証 / セッション
-  投稿
-  タイムライン
-  楽曲メタデータ
-  プレイリスト変換
-  モデレーション
-
-Workers
-  メタデータ更新
-  サービス間マッチング
-  変換結果分析
-
-Database
-  PostgreSQL
+iOS App (SwiftUI + MusicKit)
+  -> HTTPS
+  -> Application Load Balancer
+  -> ECS Fargate Service
+  -> FastAPI
+  -> SQLAlchemy
+  -> Amazon RDS PostgreSQL
 ```
 
-## Backend モジュール
+Secrets は AWS Secrets Manager で管理し、FastAPI container は ECS task definition の environment / secrets から `DATABASE_URL`、`JWT_SECRET`、Spotify keys、Apple Music keys を受け取ります。ログは CloudWatch Logs に送ります。
 
-- `auth`: アプリのセッションと Provider アカウント連携
-- `providers`: Apple Music / Spotify アダプター
-- `catalog`: 正規化した曲、アルバム、アーティスト、プレイリストのメタデータ
-- `posts`: 投稿とタイムライン取得
-- `matching`: サービス間の楽曲マッチング
-- `conversion`: 変換先サービスでのプレイリスト作成
-- `moderation`: 通報、削除、ブロック
-- `ai`: テキスト限定の紹介文・タグ補助
+## Backend
+
+Backend は `backend/api` に置きます。
+
+- `app/main.py`: FastAPI application entrypoint
+- `app/routers`: HTTP endpoint
+- `app/services`: use case / business logic
+- `app/repositories`: SQLAlchemy database access
+- `app/models`: SQLAlchemy models
+- `app/schemas`: Pydantic request / response schema
+- `app/providers`: Apple Music / Spotify adapter pattern
+- `app/matching`: cross-provider track matching
+- `alembic`: database migration
 
 ## Provider Adapter
 
-Provider ごとの差を Backend 内に閉じ込めるため、Apple Music と Spotify は共通インターフェースで扱います。
+Apple Music と Spotify の差分は Backend 内の adapter interface に閉じ込めます。
 
-```ts
-type Provider = "apple_music" | "spotify";
-
-interface MusicProviderAdapter {
-  provider: Provider;
-  searchTracks(query: TrackSearchQuery): Promise<ProviderTrack[]>;
-  getPlaylist(id: string, userToken?: string): Promise<ProviderPlaylist>;
-  createPlaylist(input: CreatePlaylistInput, userToken: string): Promise<CreatedPlaylist>;
-  addTracksToPlaylist(input: AddTracksInput, userToken: string): Promise<void>;
-  buildOpenUrl(item: ProviderItemRef): string;
-}
+```python
+class MusicProviderAdapter:
+    async def search_tracks(self, query: str, user_token: str | None = None): ...
+    async def get_playlist(self, playlist_id: str, user_token: str | None = None): ...
+    async def create_playlist(self, input_data, user_token: str): ...
+    async def add_tracks_to_playlist(self, playlist_id: str, track_ids: list[str], user_token: str): ...
+    def build_open_url(self, item): ...
 ```
 
 ## マッチング戦略
@@ -73,101 +53,22 @@ interface MusicProviderAdapter {
 
 マッチング結果には、信頼度と理由を保存します。
 
-```text
-track_matches
-  source_provider
-  source_track_id
-  target_provider
-  target_track_id
-  confidence
-  reason
-  created_at
-```
+## データモデル
 
-## データモデル案
-
-```text
-users
-  id
-  display_name
-  handle
-  primary_provider
-  created_at
-
-service_accounts
-  id
-  user_id
-  provider
-  provider_user_id
-  encrypted_refresh_token
-  scopes
-  disconnected_at
-
-posts
-  id
-  user_id
-  item_type
-  source_provider
-  source_item_id
-  caption
-  visibility
-  created_at
-
-tracks
-  id
-  provider
-  provider_track_id
-  isrc
-  title
-  artist_name
-  album_name
-  duration_ms
-  artwork_url
-  provider_url
-
-playlists
-  id
-  provider
-  provider_playlist_id
-  title
-  description
-  owner_display_name
-  provider_url
-
-playlist_items
-  playlist_id
-  position
-  track_id
-
-reports
-  id
-  reporter_user_id
-  target_type
-  target_id
-  reason
-  status
-```
-
-## iOS 優先方針
-
-Apple Music を重視するため、最初は SwiftUI と MusicKit を中心に作ります。
-
-初期画面:
-
-- サービス選択
-- Apple Music 認可
-- タイムライン
-- 投稿作成
-- プレイリスト変換レビュー
-- プロフィール
-- 通報シート
+- `users`: handle は unique
+- `service_accounts`: provider + provider_user_id は unique
+- `posts`: 投稿対象 Provider item と caption を保持
+- `tracks`: provider + provider_track_id は unique、isrc は index
+- `track_matches`: source_provider + source_track_id + target_provider は index
+- `reports`: 投稿や対象 item の通報
+- `playlists`: provider + provider_playlist_id は unique
+- `playlist_items`: playlist_id + position は unique
 
 ## セキュリティ
 
+- Auth は JWT を使う。
 - Provider token は Backend で暗号化保存する。
 - Spotify のモバイル認可は PKCE を使う。
 - Apple Music の秘密鍵はサーバー側だけで扱う。
-- アプリセッションは短めにする。
 - Provider 権限 scope は最小限にする。
 - アカウント連携解除とデータ削除導線を用意する。
-

@@ -1,25 +1,24 @@
 # ローカル開発
 
-## リポジトリ
-
-標準ブランチは `main` です。
-
-```bash
-git status
-```
-
 ## Backend
 
-Backend には Node.js 22、npm、Docker が必要です。
+Backend は FastAPI, SQLAlchemy, Alembic, PostgreSQL で構成します。
+
+必要なもの:
+
+- Python 3.12
+- Docker
 
 ```bash
 docker compose up -d postgres
 cd backend/api
-cp .env.example .env
-npm install
-npm run typecheck
-npm test
-npm run dev
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+ruff check .
+pytest
+uvicorn app.main:app --reload --host 0.0.0.0 --port 4000
 ```
 
 ヘルスチェック:
@@ -28,25 +27,14 @@ npm run dev
 curl http://127.0.0.1:4000/health
 ```
 
-## iOS
-
-iOS のソース骨格は `apps/ios/MusicTimelineApp` にあります。
-
-この workspace は Windows 上にあるため、実際の Xcode プロジェクト作成とビルドは macOS で行います。
-
-1. Xcode で新規 iOS App プロジェクトを作成する。
-2. target 名を `MusicTimelineApp` にする。
-3. `apps/ios/MusicTimelineApp` から Swift ファイルをコピーする。
-4. MusicKit capability を追加する。
-5. Apple Music 利用目的の説明文を追加する。
-6. MusicKit 認可は実機 iPhone で確認する。
-
-## GitHub
-
-GitHub CLI がある環境では CLI から作成できます。ない場合は GitHub Web 上でリポジトリを作成してから push します。
+Alembic migration:
 
 ```bash
-git remote add origin https://github.com/<owner>/cross-subscription-music-timeline.git
-git push -u origin main
+cd backend/api
+alembic revision --autogenerate -m "initial schema"
+alembic upgrade head
 ```
 
+## iOS
+
+iOS の SwiftUI prototype は `apps/ios` にあります。MusicKit capability と Apple Music 利用目的の説明文を Xcode 側で設定して、実機 iPhone で認可を確認します。

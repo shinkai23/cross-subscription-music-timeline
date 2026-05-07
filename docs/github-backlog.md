@@ -51,8 +51,8 @@ Labels: `feature`, `backend`
 受け入れ条件:
 
 - `GET /health` が成功する。
-- `GET /posts` がモックタイムラインを返す。
-- CI で TypeScript 型チェックが通る。
+- `GET /posts` が投稿一覧を返す。
+- CI で `ruff` と `pytest` が通る。
 
 ## Milestone: Playlist Conversion MVP
 
@@ -127,4 +127,3 @@ Labels: `feature`, `ai`, `legal-risk`
 - AI は紹介文、タグ、要約だけを生成する。
 - 音声生成と歌詞全文生成の要求を拒否する。
 - AI が参照した入力の種類を監査用に記録する。
-
