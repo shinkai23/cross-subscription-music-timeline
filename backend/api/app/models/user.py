@@ -24,3 +24,4 @@ class User(Base):
     )
 
     service_accounts = relationship("ServiceAccount", back_populates="user")
+    posts = relationship("Post", back_populates="user")
