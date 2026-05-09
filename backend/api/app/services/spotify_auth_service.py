@@ -14,6 +14,10 @@ class SpotifyAuthorizationRequest:
     code_verifier: str
 
 
+class InvalidSpotifyStateError(Exception):
+    pass
+
+
 SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 
 
@@ -55,3 +59,8 @@ def build_spotify_authorization_request() -> SpotifyAuthorizationRequest:
         state=state,
         code_verifier=code_verifier,
     )
+
+
+def validate_spotify_callback_state(expected_state: str, actual_state: str) -> None:
+    if expected_state != actual_state:
+        raise InvalidSpotifyStateError()

@@ -1,12 +1,16 @@
 from urllib.parse import parse_qs, urlparse
 
+import pytest
+
 from app.core.config import get_settings
 from app.services.spotify_auth_service import (
+    InvalidSpotifyStateError,
     SPOTIFY_AUTHORIZE_URL,
     build_code_challenge,
     build_spotify_authorization_request,
     build_spotify_authorization_url,
     generate_code_verifier,
+    validate_spotify_callback_state,
 )
 
 
@@ -58,3 +62,18 @@ def test_build_spotify_authorization_request() -> None:
         build_code_challenge(authorization_request.code_verifier)
     ]
     assert query["code_challenge_method"] == ["S256"]
+
+
+def test_validate_spotify_callback_state_accepts_matching_state() -> None:
+    validate_spotify_callback_state(
+        expected_state="state-value",
+        actual_state="state-value",
+    )
+
+
+def test_validate_spotify_callback_state_rejects_mismatched_state() -> None:
+    with pytest.raises(InvalidSpotifyStateError):
+        validate_spotify_callback_state(
+            expected_state="expected-state",
+            actual_state="actual-state",
+        )
