@@ -54,6 +54,12 @@ def test_read_me(client: TestClient) -> None:
     assert response.json()["id"] == user["id"]
 
 
+def test_read_me_rejects_missing_token(client: TestClient) -> None:
+    response = client.get("/me")
+
+    assert response.status_code == 401
+
+
 def test_read_me_rejects_invalid_token(client: TestClient) -> None:
     response = client.get(
         "/me",

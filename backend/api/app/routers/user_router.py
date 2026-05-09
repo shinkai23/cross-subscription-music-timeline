@@ -16,11 +16,6 @@ def get_user_service(db: Session = Depends(get_db)) -> UserService:
     return UserService(UserRepository(db))
 
 
-@router.get("/me", response_model=UserRead)
-def read_me(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
-
-
 @router.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: UserCreate,
@@ -33,3 +28,8 @@ def create_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="User handle already exists",
         ) from exc
+
+
+@router.get("/me", response_model=UserRead)
+def read_me(current_user: User = Depends(get_current_user)) -> User:
+    return current_user

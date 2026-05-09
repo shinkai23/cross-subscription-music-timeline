@@ -7,8 +7,8 @@ pydantic
 pydantic-settings
 python-dotenv
 python-jose
-passlib[bcrypt]
-bcrypt<5
 httpx
 pytest
 ruff
+passlib[bcrypt]
+bcrypt<5
