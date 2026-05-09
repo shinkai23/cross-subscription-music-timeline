@@ -10,6 +10,14 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+    spotify_client_id: str = ""
+    spotify_redirect_uri: str = "http://localhost:4000/auth/spotify/callback"
+    spotify_auth_scopes: str = (
+        "playlist-read-private "
+        "playlist-modify-private "
+        "playlist-modify-public"
+    )
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
