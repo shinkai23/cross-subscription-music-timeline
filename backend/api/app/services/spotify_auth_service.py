@@ -1,10 +1,12 @@
 import base64
 import hashlib
+import httpx
 import secrets
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
 from app.core.config import get_settings
+from app.schemas.spotify_auth_schema import SpotifyTokenResponse
 
 
 @dataclass(frozen=True)
@@ -18,7 +20,12 @@ class InvalidSpotifyStateError(Exception):
     pass
 
 
+class SpotifyTokenExchangeError(Exception):
+    pass
+
+
 SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
+SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 
 
 def build_spotify_authorization_url(state: str, code_challenge: str) -> str:
@@ -64,3 +71,49 @@ def build_spotify_authorization_request() -> SpotifyAuthorizationRequest:
 def validate_spotify_callback_state(expected_state: str, actual_state: str) -> None:
     if expected_state != actual_state:
         raise InvalidSpotifyStateError()
+
+
+def build_spotify_token_exchange_payload(
+    code: str,
+    code_verifier: str,
+) -> dict[str, str]:
+    settings = get_settings()
+    return {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.spotify_redirect_uri,
+        "client_id": settings.spotify_client_id,
+        "code_verifier": code_verifier,
+    }
+
+async def exchange_spotify_code_for_token(
+    code: str,
+    code_verifier: str,
+    client: httpx.AsyncClient | None = None,
+) -> SpotifyTokenResponse:
+    payload = build_spotify_token_exchange_payload(
+        code=code,
+        code_verifier=code_verifier,
+    )
+
+    if client is None:
+        async with httpx.AsyncClient() as default_client:
+            response = await _post_spotify_token_exchange(default_client, payload)
+    else:
+        response = await _post_spotify_token_exchange(client, payload)
+
+    if response.status_code >= 400:
+        raise SpotifyTokenExchangeError()
+
+    return SpotifyTokenResponse.model_validate(response.json())
+
+
+async def _post_spotify_token_exchange(
+    client: httpx.AsyncClient,
+    payload: dict[str, str],
+) -> httpx.Response:
+    return await client.post(
+        SPOTIFY_TOKEN_URL,
+        data=payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )

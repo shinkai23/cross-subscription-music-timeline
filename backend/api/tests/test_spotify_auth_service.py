@@ -1,14 +1,19 @@
 from urllib.parse import parse_qs, urlparse
 
+import httpx
 import pytest
 
 from app.core.config import get_settings
 from app.services.spotify_auth_service import (
     InvalidSpotifyStateError,
     SPOTIFY_AUTHORIZE_URL,
+    SPOTIFY_TOKEN_URL,
+    SpotifyTokenExchangeError,
     build_code_challenge,
     build_spotify_authorization_request,
     build_spotify_authorization_url,
+    build_spotify_token_exchange_payload,
+    exchange_spotify_code_for_token,
     generate_code_verifier,
     validate_spotify_callback_state,
 )
@@ -77,3 +82,70 @@ def test_validate_spotify_callback_state_rejects_mismatched_state() -> None:
             expected_state="expected-state",
             actual_state="actual-state",
         )
+
+
+def test_build_spotify_token_exchange_payload() -> None:
+    settings = get_settings()
+
+    payload = build_spotify_token_exchange_payload(
+        code="spotify-code",
+        code_verifier="code-verifier",
+    )
+
+    assert payload == {
+        "grant_type": "authorization_code",
+        "code": "spotify-code",
+        "redirect_uri": settings.spotify_redirect_uri,
+        "client_id": settings.spotify_client_id,
+        "code_verifier": "code-verifier",
+    }
+
+
+@pytest.mark.anyio
+async def test_exchange_spotify_code_for_token() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == SPOTIFY_TOKEN_URL
+        assert request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+        assert b"grant_type=authorization_code" in request.content
+        assert b"code=spotify-code" in request.content
+        assert b"code_verifier=code-verifier" in request.content
+
+        return httpx.Response(
+            status_code=200,
+            json={
+                "access_token": "access-token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "refresh_token": "refresh-token",
+                "scope": "playlist-read-private",
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        token_response = await exchange_spotify_code_for_token(
+            code="spotify-code",
+            code_verifier="code-verifier",
+            client=client,
+        )
+
+    assert token_response.access_token == "access-token"
+    assert token_response.token_type == "Bearer"
+    assert token_response.expires_in == 3600
+    assert token_response.refresh_token == "refresh-token"
+    assert token_response.scope == "playlist-read-private"
+
+
+@pytest.mark.anyio
+async def test_exchange_spotify_code_for_token_raises_on_error() -> None:
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=400, json={"error": "invalid_grant"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(SpotifyTokenExchangeError):
+            await exchange_spotify_code_for_token(
+                code="spotify-code",
+                code_verifier="code-verifier",
+                client=client,
+            )
