@@ -24,8 +24,13 @@ class SpotifyTokenExchangeError(Exception):
     pass
 
 
+class SpotifyCurrentUserFetchError(Exception):
+    pass
+
+
 SPOTIFY_AUTHORIZE_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
+SPOTIFY_ME_URL = "https://api.spotify.com/v1/me"
 
 
 def build_spotify_authorization_url(state: str, code_challenge: str) -> str:
@@ -116,4 +121,31 @@ async def _post_spotify_token_exchange(
         SPOTIFY_TOKEN_URL,
         data=payload,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+
+
+async def fetch_spotify_current_user_id(
+    access_token: str,
+    client: httpx.AsyncClient | None = None,
+) -> str:
+    if client is None:
+        async with httpx.AsyncClient() as default_client:
+            response = await _get_spotify_current_user(default_client, access_token)
+    else:
+        response = await _get_spotify_current_user(client, access_token)
+
+    if response.status_code >= 400:
+        raise SpotifyCurrentUserFetchError()
+
+    data = response.json()
+    return data["id"]
+
+
+async def _get_spotify_current_user(
+    client: httpx.AsyncClient,
+    access_token: str,
+) -> httpx.Response:
+    return await client.get(
+        SPOTIFY_ME_URL,
+        headers={"Authorization": f"Bearer {access_token}"},
     )

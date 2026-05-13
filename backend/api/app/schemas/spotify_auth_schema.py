@@ -26,3 +26,15 @@ class SpotifyTokenResponse(BaseModel):
     expires_in: int
     refresh_token: str | None = None
     scope: str | None = None
+
+
+class SpotifyConnectRequest(BaseModel):
+    code: str
+    code_verifier: str
+    state: str
+    expected_state: str
+
+
+class SpotifyConnectResponse(BaseModel):
+    provider: str
+    provider_user_id: str

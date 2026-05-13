@@ -7,13 +7,16 @@ from app.core.config import get_settings
 from app.services.spotify_auth_service import (
     InvalidSpotifyStateError,
     SPOTIFY_AUTHORIZE_URL,
+    SPOTIFY_ME_URL,
     SPOTIFY_TOKEN_URL,
+    SpotifyCurrentUserFetchError,
     SpotifyTokenExchangeError,
     build_code_challenge,
     build_spotify_authorization_request,
     build_spotify_authorization_url,
     build_spotify_token_exchange_payload,
     exchange_spotify_code_for_token,
+    fetch_spotify_current_user_id,
     generate_code_verifier,
     validate_spotify_callback_state,
 )
@@ -147,5 +150,36 @@ async def test_exchange_spotify_code_for_token_raises_on_error() -> None:
             await exchange_spotify_code_for_token(
                 code="spotify-code",
                 code_verifier="code-verifier",
+                client=client,
+            )
+
+
+@pytest.mark.anyio
+async def test_fetch_spotify_current_user_id() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == SPOTIFY_ME_URL
+        assert request.headers["Authorization"] == "Bearer access-token"
+        return httpx.Response(status_code=200, json={"id": "spotify-user-1"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        provider_user_id = await fetch_spotify_current_user_id(
+            access_token="access-token",
+            client=client,
+        )
+
+    assert provider_user_id == "spotify-user-1"
+
+
+@pytest.mark.anyio
+async def test_fetch_spotify_current_user_id_raises_on_error() -> None:
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=401, json={"error": "invalid_token"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(SpotifyCurrentUserFetchError):
+            await fetch_spotify_current_user_id(
+                access_token="access-token",
                 client=client,
             )
