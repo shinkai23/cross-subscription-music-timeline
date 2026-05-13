@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         "playlist-modify-private "
         "playlist-modify-public"
     )
+    token_encryption_key: str = "3QUlaYLveO5FK5fWDYTA7O7um9OzDCV4u2NA-ZXq9a0="
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

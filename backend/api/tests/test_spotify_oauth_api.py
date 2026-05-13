@@ -7,6 +7,7 @@ from app.core.security import create_access_token
 from app.models.service_account import ServiceAccount
 from app.models.user import User
 from app.schemas.spotify_auth_schema import SpotifyTokenResponse
+from app.services.token_encryption_service import TokenEncryptionService
 
 
 def test_authorize_spotify(client: TestClient) -> None:
@@ -176,7 +177,11 @@ def test_connect_spotify(
     assert service_account.user_id == user.id
     assert service_account.provider == "spotify"
     assert service_account.provider_user_id == "spotify-user-1"
-    assert service_account.encrypted_refresh_token == "refresh-token"
+    assert service_account.encrypted_refresh_token != "refresh-token"
+    assert (
+        TokenEncryptionService().decrypt(service_account.encrypted_refresh_token)
+        == "refresh-token"
+    )
     assert service_account.scopes == "playlist-read-private"
 
 

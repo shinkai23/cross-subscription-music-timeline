@@ -12,3 +12,4 @@ pytest
 ruff
 passlib[bcrypt]
 bcrypt<5
+cryptography
