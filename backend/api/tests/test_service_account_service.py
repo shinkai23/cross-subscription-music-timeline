@@ -7,6 +7,7 @@ from app.repositories.service_account_repository import ServiceAccountRepository
 from app.schemas.spotify_auth_schema import SpotifyTokenResponse
 from app.services.service_account_service import (
     ServiceAccountAlreadyConnectedError,
+    ServiceAccountRefreshTokenMissingError,
     ServiceAccountService,
 )
 from app.services.token_encryption_service import TokenEncryptionService
@@ -17,6 +18,11 @@ class FakeTokenEncryptionService(TokenEncryptionService):
         if token is None:
             return None
         return f"encrypted:{token}"
+
+    def decrypt(self, encrypted_token: str | None) -> str | None:
+        if encrypted_token is None:
+            return None
+        return encrypted_token.removeprefix("encrypted:")
 
 
 def test_connect_spotify_account_creates_service_account(
@@ -113,3 +119,59 @@ def test_connect_spotify_account_rejects_account_connected_to_other_user(
             provider_user_id="spotify-user-1",
             token_response=token_response,
         )
+
+
+@pytest.mark.anyio
+async def test_refresh_spotify_access_token_for_account(
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    repository = ServiceAccountRepository(db_session)
+    service = ServiceAccountService(repository, FakeTokenEncryptionService())
+    service_account = ServiceAccount(
+        user_id="user-1",
+        provider="spotify",
+        provider_user_id="spotify-user-1",
+        encrypted_refresh_token="encrypted:refresh-token",
+    )
+
+    async def fake_refresh_spotify_access_token(
+        refresh_token: str,
+    ) -> SpotifyTokenResponse:
+        assert refresh_token == "refresh-token"
+        return SpotifyTokenResponse(
+            access_token="new-access-token",
+            token_type="Bearer",
+            expires_in=3600,
+            scope="playlist-read-private",
+        )
+
+    monkeypatch.setattr(
+        "app.services.service_account_service.refresh_spotify_access_token",
+        fake_refresh_spotify_access_token,
+    )
+
+    token_response = await service.refresh_spotify_access_token_for_account(
+        service_account
+    )
+
+    assert token_response.access_token == "new-access-token"
+    assert token_response.token_type == "Bearer"
+    assert token_response.expires_in == 3600
+
+
+@pytest.mark.anyio
+async def test_refresh_spotify_access_token_for_account_rejects_missing_token(
+    db_session: Session,
+) -> None:
+    repository = ServiceAccountRepository(db_session)
+    service = ServiceAccountService(repository, FakeTokenEncryptionService())
+    service_account = ServiceAccount(
+        user_id="user-1",
+        provider="spotify",
+        provider_user_id="spotify-user-1",
+        encrypted_refresh_token=None,
+    )
+
+    with pytest.raises(ServiceAccountRefreshTokenMissingError):
+        await service.refresh_spotify_access_token_for_account(service_account)

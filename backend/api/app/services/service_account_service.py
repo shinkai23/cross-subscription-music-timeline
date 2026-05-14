@@ -2,10 +2,15 @@ from app.models.service_account import ServiceAccount
 from app.models.user import User
 from app.repositories.service_account_repository import ServiceAccountRepository
 from app.schemas.spotify_auth_schema import SpotifyTokenResponse
+from app.services.spotify_auth_service import refresh_spotify_access_token
 from app.services.token_encryption_service import TokenEncryptionService
 
 
 class ServiceAccountAlreadyConnectedError(Exception):
+    pass
+
+
+class ServiceAccountRefreshTokenMissingError(Exception):
     pass
 
 
@@ -44,3 +49,16 @@ class ServiceAccountService:
             encrypted_refresh_token=encrypted_refresh_token,
             scopes=token_response.scope,
         )
+
+    async def refresh_spotify_access_token_for_account(
+        self,
+        service_account: ServiceAccount,
+    ) -> SpotifyTokenResponse:
+        refresh_token = self.token_encryption_service.decrypt(
+            service_account.encrypted_refresh_token
+        )
+
+        if refresh_token is None:
+            raise ServiceAccountRefreshTokenMissingError()
+
+        return await refresh_spotify_access_token(refresh_token=refresh_token)

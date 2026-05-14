@@ -91,6 +91,18 @@ def build_spotify_token_exchange_payload(
         "code_verifier": code_verifier,
     }
 
+
+def build_spotify_token_refresh_payload(
+    refresh_token: str,
+) -> dict[str, str]:
+    settings = get_settings()
+    return {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_token,
+        "client_id": settings.spotify_client_id,
+    }
+
+
 async def exchange_spotify_code_for_token(
     code: str,
     code_verifier: str,
@@ -99,6 +111,26 @@ async def exchange_spotify_code_for_token(
     payload = build_spotify_token_exchange_payload(
         code=code,
         code_verifier=code_verifier,
+    )
+
+    if client is None:
+        async with httpx.AsyncClient() as default_client:
+            response = await _post_spotify_token_exchange(default_client, payload)
+    else:
+        response = await _post_spotify_token_exchange(client, payload)
+
+    if response.status_code >= 400:
+        raise SpotifyTokenExchangeError()
+
+    return SpotifyTokenResponse.model_validate(response.json())
+
+
+async def refresh_spotify_access_token(
+    refresh_token: str,
+    client: httpx.AsyncClient | None = None,
+) -> SpotifyTokenResponse:
+    payload = build_spotify_token_refresh_payload(
+        refresh_token=refresh_token,
     )
 
     if client is None:

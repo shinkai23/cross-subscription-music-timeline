@@ -15,9 +15,11 @@ from app.services.spotify_auth_service import (
     build_spotify_authorization_request,
     build_spotify_authorization_url,
     build_spotify_token_exchange_payload,
+    build_spotify_token_refresh_payload,
     exchange_spotify_code_for_token,
     fetch_spotify_current_user_id,
     generate_code_verifier,
+    refresh_spotify_access_token,
     validate_spotify_callback_state,
 )
 
@@ -104,6 +106,20 @@ def test_build_spotify_token_exchange_payload() -> None:
     }
 
 
+def test_build_spotify_token_refresh_payload() -> None:
+    settings = get_settings()
+
+    payload = build_spotify_token_refresh_payload(
+        refresh_token="refresh-token",
+    )
+
+    assert payload == {
+        "grant_type": "refresh_token",
+        "refresh_token": "refresh-token",
+        "client_id": settings.spotify_client_id,
+    }
+
+
 @pytest.mark.anyio
 async def test_exchange_spotify_code_for_token() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -150,6 +166,52 @@ async def test_exchange_spotify_code_for_token_raises_on_error() -> None:
             await exchange_spotify_code_for_token(
                 code="spotify-code",
                 code_verifier="code-verifier",
+                client=client,
+            )
+
+
+@pytest.mark.anyio
+async def test_refresh_spotify_access_token() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == SPOTIFY_TOKEN_URL
+        assert request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+        assert b"grant_type=refresh_token" in request.content
+        assert b"refresh_token=refresh-token" in request.content
+
+        return httpx.Response(
+            status_code=200,
+            json={
+                "access_token": "new-access-token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "playlist-read-private",
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        token_response = await refresh_spotify_access_token(
+            refresh_token="refresh-token",
+            client=client,
+        )
+
+    assert token_response.access_token == "new-access-token"
+    assert token_response.token_type == "Bearer"
+    assert token_response.expires_in == 3600
+    assert token_response.refresh_token is None
+    assert token_response.scope == "playlist-read-private"
+
+
+@pytest.mark.anyio
+async def test_refresh_spotify_access_token_raises_on_error() -> None:
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=400, json={"error": "invalid_grant"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(SpotifyTokenExchangeError):
+            await refresh_spotify_access_token(
+                refresh_token="refresh-token",
                 client=client,
             )
 
