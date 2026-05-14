@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -59,3 +61,50 @@ def test_get_by_provider_user_id_returns_none_when_missing(
     )
 
     assert service_account is None
+
+
+def test_get_by_user_id_and_provider(
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    repository = ServiceAccountRepository(db_session)
+    created_service_account = repository.create_service_account(
+        user_id=user.id,
+        provider="spotify",
+        provider_user_id="spotify-user-1",
+    )
+
+    found_service_account = repository.get_by_user_id_and_provider(
+        user_id=user.id,
+        provider="spotify",
+    )
+
+    assert found_service_account is not None
+    assert found_service_account.id == created_service_account.id
+
+
+def test_get_by_user_id_and_provider_excludes_disconnected_account(
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    repository = ServiceAccountRepository(db_session)
+    service_account = repository.create_service_account(
+        user_id=user.id,
+        provider="spotify",
+        provider_user_id="spotify-user-1",
+    )
+    service_account.disconnected_at = datetime.now(timezone.utc)
+    db_session.commit()
+
+    found_service_account = repository.get_by_user_id_and_provider(
+        user_id=user.id,
+        provider="spotify",
+    )
+
+    assert found_service_account is None

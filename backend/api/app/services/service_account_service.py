@@ -14,6 +14,10 @@ class ServiceAccountRefreshTokenMissingError(Exception):
     pass
 
 
+class ServiceAccountNotConnectedError(Exception):
+    pass
+
+
 class ServiceAccountService:
     def __init__(
         self,
@@ -62,3 +66,20 @@ class ServiceAccountService:
             raise ServiceAccountRefreshTokenMissingError()
 
         return await refresh_spotify_access_token(refresh_token=refresh_token)
+
+    async def get_provider_access_token(
+        self,
+        user: User,
+        provider: str,
+    ) -> str:
+        service_account = self.repository.get_by_user_id_and_provider(user.id, provider)
+
+        if service_account is None:
+            raise ServiceAccountNotConnectedError()
+
+        if provider == "spotify":
+            token_response = await self.refresh_spotify_access_token_for_account(
+                service_account
+            )
+            return token_response.access_token
+        raise ServiceAccountNotConnectedError()

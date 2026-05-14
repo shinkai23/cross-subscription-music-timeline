@@ -1,8 +1,14 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
+from app.core.security import create_access_token
 from app.main import app
+from app.models.user import User
 from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
-from app.routers.provider_router import get_provider_service
+from app.routers.provider_router import (
+    get_provider_service,
+    get_service_account_service,
+)
 
 
 class FakeProviderService:
@@ -83,18 +89,36 @@ class FakeProviderService:
         assert user_token == "access-token"
 
 
-def test_search_tracks(client: TestClient) -> None:
+class FakeServiceAccountService:
+    async def get_provider_access_token(
+        self,
+        user: User,
+        provider: str,
+    ) -> str:
+        assert user.handle == "test-user"
+        assert provider == "spotify"
+        return "access-token"
+
+
+def test_search_tracks(client: TestClient, db_session: Session) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
     app.dependency_overrides[get_provider_service] = lambda: FakeProviderService()
+    app.dependency_overrides[get_service_account_service] = (
+        lambda: FakeServiceAccountService()
+    )
     try:
         response = client.get(
             "/providers/spotify/search/tracks",
-            params={
-                "q": "Radiohead",
-                "user_token": "access-token",
-            },
+            headers={"Authorization": f"Bearer {token}"},
+            params={"q": "Radiohead"},
         )
     finally:
         app.dependency_overrides.pop(get_provider_service, None)
+        app.dependency_overrides.pop(get_service_account_service, None)
 
     assert response.status_code == 200
     assert response.json() == [
@@ -111,21 +135,51 @@ def test_search_tracks(client: TestClient) -> None:
     ]
 
 
-def test_search_tracks_requires_query(client: TestClient) -> None:
-    response = client.get("/providers/spotify/search/tracks")
+def test_search_tracks_requires_query(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
+
+    response = client.get(
+        "/providers/spotify/search/tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
     assert response.status_code == 422
 
 
-def test_get_playlist(client: TestClient) -> None:
+def test_search_tracks_requires_authentication(client: TestClient) -> None:
+    response = client.get(
+        "/providers/spotify/search/tracks",
+        params={"q": "Radiohead"},
+    )
+
+    assert response.status_code == 401
+
+
+def test_get_playlist(client: TestClient, db_session: Session) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
     app.dependency_overrides[get_provider_service] = lambda: FakeProviderService()
+    app.dependency_overrides[get_service_account_service] = (
+        lambda: FakeServiceAccountService()
+    )
     try:
         response = client.get(
             "/providers/spotify/playlists/playlist-1",
-            params={"user_token": "access-token"},
+            headers={"Authorization": f"Bearer {token}"},
         )
     finally:
         app.dependency_overrides.pop(get_provider_service, None)
+        app.dependency_overrides.pop(get_service_account_service, None)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -148,12 +202,26 @@ def test_get_playlist(client: TestClient) -> None:
     }
 
 
-def test_create_playlist(client: TestClient) -> None:
+def test_get_playlist_requires_authentication(client: TestClient) -> None:
+    response = client.get("/providers/spotify/playlists/playlist-1")
+
+    assert response.status_code == 401
+
+
+def test_create_playlist(client: TestClient, db_session: Session) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
     app.dependency_overrides[get_provider_service] = lambda: FakeProviderService()
+    app.dependency_overrides[get_service_account_service] = (
+        lambda: FakeServiceAccountService()
+    )
     try:
         response = client.post(
             "/providers/spotify/playlists",
-            params={"user_token": "access-token"},
+            headers={"Authorization": f"Bearer {token}"},
             json={
                 "title": "New Playlist",
                 "description": "Created from app",
@@ -162,6 +230,7 @@ def test_create_playlist(client: TestClient) -> None:
         )
     finally:
         app.dependency_overrides.pop(get_provider_service, None)
+        app.dependency_overrides.pop(get_service_account_service, None)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -173,7 +242,7 @@ def test_create_playlist(client: TestClient) -> None:
     }
 
 
-def test_create_playlist_requires_user_token(client: TestClient) -> None:
+def test_create_playlist_requires_authentication(client: TestClient) -> None:
     response = client.post(
         "/providers/spotify/playlists",
         json={
@@ -183,37 +252,55 @@ def test_create_playlist_requires_user_token(client: TestClient) -> None:
         },
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 401
 
 
-def test_add_tracks_to_playlist(client: TestClient) -> None:
+def test_add_tracks_to_playlist(client: TestClient, db_session: Session) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
     app.dependency_overrides[get_provider_service] = lambda: FakeProviderService()
+    app.dependency_overrides[get_service_account_service] = (
+        lambda: FakeServiceAccountService()
+    )
     try:
         response = client.post(
             "/providers/spotify/playlists/playlist-1/tracks",
-            params={"user_token": "access-token"},
+            headers={"Authorization": f"Bearer {token}"},
             json={"track_ids": ["track-1", "track-2"]},
         )
     finally:
         app.dependency_overrides.pop(get_provider_service, None)
+        app.dependency_overrides.pop(get_service_account_service, None)
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_add_tracks_to_playlist_requires_user_token(client: TestClient) -> None:
+def test_add_tracks_to_playlist_requires_authentication(client: TestClient) -> None:
     response = client.post(
         "/providers/spotify/playlists/playlist-1/tracks",
         json={"track_ids": ["track-1"]},
     )
 
-    assert response.status_code == 422
+    assert response.status_code == 401
 
 
-def test_add_tracks_to_playlist_rejects_empty_track_ids(client: TestClient) -> None:
+def test_add_tracks_to_playlist_rejects_empty_track_ids(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
+
     response = client.post(
         "/providers/spotify/playlists/playlist-1/tracks",
-        params={"user_token": "access-token"},
+        headers={"Authorization": f"Bearer {token}"},
         json={"track_ids": []},
     )
 

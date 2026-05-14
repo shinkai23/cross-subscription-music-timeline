@@ -38,3 +38,15 @@ class ServiceAccountRepository:
         self.db.commit()
         self.db.refresh(service_account)
         return service_account
+
+    def get_by_user_id_and_provider(
+        self,
+        user_id: str,
+        provider: str,
+    ) -> ServiceAccount | None:
+        statement = select(ServiceAccount).where(
+            ServiceAccount.user_id == user_id,
+            ServiceAccount.provider == provider,
+            ServiceAccount.disconnected_at.is_(None),
+        )
+        return self.db.scalar(statement)
