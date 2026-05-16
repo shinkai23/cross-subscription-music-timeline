@@ -1,6 +1,11 @@
 import pytest
 
-from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
+from app.providers.base import (
+    CreatePlaylistInput,
+    ProviderPlaybackMetadata,
+    ProviderPlaylist,
+    ProviderTrack,
+)
 from app.services.provider_service import ProviderService
 
 
@@ -58,6 +63,23 @@ class FakeAdapter:
         assert playlist_id == "playlist-1"
         assert track_ids == ["track-1", "track-2"]
         assert user_token == "user-token"
+
+    async def get_track_playback(
+        self,
+        track_id: str,
+        user_token: str | None = None,
+    ) -> ProviderPlaybackMetadata:
+        assert track_id == "track-1"
+        assert user_token == "user-token"
+        return ProviderPlaybackMetadata(
+            provider="fake",
+            provider_track_id="track-1",
+            playback_id="track-1",
+            preview_url="https://example.com/preview.mp3",
+            artwork_url="https://example.com/artwork.jpg",
+            provider_url="https://example.com/track/track-1",
+            is_playable=True,
+        )
 
 
 @pytest.mark.anyio
@@ -129,3 +151,22 @@ async def test_add_tracks_to_playlist_calls_provider_adapter(monkeypatch) -> Non
         track_ids=["track-1", "track-2"],
         user_token="user-token",
     )
+
+
+@pytest.mark.anyio
+async def test_get_track_playback_calls_provider_adapter(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.services.provider_service.get_provider_adapter",
+        lambda provider: FakeAdapter(),
+    )
+    service = ProviderService()
+
+    playback = await service.get_track_playback(
+        provider="fake",
+        track_id="track-1",
+        user_token="user-token",
+    )
+
+    assert playback.provider == "fake"
+    assert playback.provider_track_id == "track-1"
+    assert playback.preview_url == "https://example.com/preview.mp3"

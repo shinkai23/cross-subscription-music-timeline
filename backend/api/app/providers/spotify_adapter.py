@@ -5,6 +5,7 @@ import httpx
 from app.providers.base import (
     CreatePlaylistInput,
     MusicProviderAdapter,
+    ProviderPlaybackMetadata,
     ProviderPlaylist,
     ProviderTrack,
 )
@@ -13,6 +14,7 @@ SPOTIFY_SEARCH_URL = "https://api.spotify.com/v1/search"
 SPOTIFY_PLAYLIST_URL = "https://api.spotify.com/v1/playlists/{playlist_id}"
 SPOTIFY_CURRENT_USER_PLAYLIST_URL = "https://api.spotify.com/v1/me/playlists"
 SPOTIFY_PLAYLIST_TRACKS_URL = "https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
+SPOTIFY_TRACK_URL = "https://api.spotify.com/v1/tracks/{track_id}"
 
 
 class SpotifyAccessTokenRequiredError(Exception):
@@ -148,6 +150,36 @@ class SpotifyAdapter(MusicProviderAdapter):
             )
         if response.is_error:
             self._raise_provider_error(response)
+
+    async def get_track_playback(
+        self,
+        track_id: str,
+        user_token: str | None = None,
+    ) -> ProviderPlaybackMetadata:
+        if user_token is None:
+            raise SpotifyAccessTokenRequiredError()
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                SPOTIFY_TRACK_URL.format(track_id=track_id),
+                headers={"Authorization": f"Bearer {user_token}"},
+            )
+
+        if response.is_error:
+            self._raise_provider_error(response)
+
+        data = response.json()
+        images = data.get("album", {}).get("images", [])
+
+        return ProviderPlaybackMetadata(
+            provider=self.provider,
+            provider_track_id=data["id"],
+            playback_id=data["id"],
+            preview_url=data.get("preview_url"),
+            artwork_url=images[0]["url"] if images else None,
+            provider_url=data.get("external_urls", {}).get("spotify"),
+            is_playable=data.get("is_playable", True),
+        )
 
     def build_open_url(self, item: Any) -> str:
         provider_id = self._extract_provider_id(item)

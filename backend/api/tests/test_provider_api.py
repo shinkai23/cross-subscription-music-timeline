@@ -11,7 +11,12 @@ from app.providers.apple_music_adapter import (
     APPLE_MUSIC_LIBRARY_PLAYLIST_URL,
     APPLE_MUSIC_LIBRARY_PLAYLISTS_URL,
 )
-from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
+from app.providers.base import (
+    CreatePlaylistInput,
+    ProviderPlaybackMetadata,
+    ProviderPlaylist,
+    ProviderTrack,
+)
 from app.providers.error import ProviderApiError
 from app.routers.provider_router import (
     get_provider_service,
@@ -102,6 +107,25 @@ class FakeProviderService:
         assert playlist_id == "playlist-1"
         assert track_ids == ["track-1", "track-2"]
         assert user_token == "access-token"
+
+    async def get_track_playback(
+        self,
+        provider: str,
+        track_id: str,
+        user_token: str,
+    ) -> ProviderPlaybackMetadata:
+        assert provider == "spotify"
+        assert track_id == "track-1"
+        assert user_token == "access-token"
+        return ProviderPlaybackMetadata(
+            provider="spotify",
+            provider_track_id="track-1",
+            playback_id="track-1",
+            preview_url="https://p.scdn.co/mp3-preview/track",
+            artwork_url="https://i.scdn.co/image/artwork",
+            provider_url="https://open.spotify.com/track/track-1",
+            is_playable=True,
+        )
 
 
 class FakeAppleMusicProviderService:
@@ -741,3 +765,34 @@ def test_add_tracks_to_playlist_rejects_empty_track_ids(
         app.dependency_overrides.pop(get_service_account_service, None)
 
     assert response.status_code == 422
+
+
+def test_get_track_playback(client: TestClient, db_session: Session) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
+    app.dependency_overrides[get_provider_service] = lambda: FakeProviderService()
+    app.dependency_overrides[get_service_account_service] = (
+        lambda: FakeServiceAccountService()
+    )
+    try:
+        response = client.get(
+            "/providers/spotify/tracks/track-1/playback",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    finally:
+        app.dependency_overrides.pop(get_provider_service, None)
+        app.dependency_overrides.pop(get_service_account_service, None)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "provider": "spotify",
+        "provider_track_id": "track-1",
+        "playback_id": "track-1",
+        "preview_url": "https://p.scdn.co/mp3-preview/track",
+        "artwork_url": "https://i.scdn.co/image/artwork",
+        "provider_url": "https://open.spotify.com/track/track-1",
+        "is_playable": True,
+    }

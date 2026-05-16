@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
-from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
+from app.providers.base import (
+    CreatePlaylistInput,
+    ProviderPlaybackMetadata,
+    ProviderPlaylist,
+    ProviderTrack,
+)
 from app.repositories.service_account_repository import ServiceAccountRepository
 from app.schemas.provider_schema import AddTracksToPlaylistRequest
 from app.services.provider_service import ProviderService
@@ -113,3 +118,19 @@ async def add_track_to_playlist(
         user_token=auth_context.user_token,
     )
     return {"status": "ok"}
+
+
+@router.get(
+    "/{provider}/tracks/{track_id}/playback",
+    response_model=ProviderPlaybackMetadata,
+)
+async def get_track_playback(
+    track_id: str,
+    auth_context: AuthContext = Depends(get_auth_context),
+    service: ProviderService = Depends(get_provider_service),
+) -> ProviderPlaybackMetadata:
+    return await service.get_track_playback(
+        provider=auth_context.provider,
+        track_id=track_id,
+        user_token=auth_context.user_token,
+    )

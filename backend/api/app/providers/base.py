@@ -33,6 +33,16 @@ class CreatePlaylistInput(BaseModel):
     track_ids: list[str] = Field(default_factory=list)
 
 
+class ProviderPlaybackMetadata(BaseModel):
+    provider: str
+    provider_track_id: str
+    playback_id: str
+    preview_url: str | None = None
+    artwork_url: str | None = None
+    provider_url: str | None = None
+    is_playable: bool = True
+
+
 class ProviderItemRef(Protocol):
     provider_id: str
 
@@ -71,6 +81,14 @@ class MusicProviderAdapter(ABC):
         track_ids: list[str],
         user_token: str,
     ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_track_playback(
+        self,
+        track_id: str,
+        user_token: str | None = None,
+    ) -> ProviderPlaybackMetadata:
         raise NotImplementedError
 
     @abstractmethod

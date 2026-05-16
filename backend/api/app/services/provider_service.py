@@ -1,4 +1,9 @@
-from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
+from app.providers.base import (
+    CreatePlaylistInput,
+    ProviderPlaybackMetadata,
+    ProviderPlaylist,
+    ProviderTrack,
+)
 from app.providers.registry import get_provider_adapter
 
 
@@ -50,5 +55,17 @@ class ProviderService:
         return await adapter.add_tracks_to_playlist(
             playlist_id=playlist_id,
             track_ids=track_ids,
+            user_token=user_token,
+        )
+
+    async def get_track_playback(
+        self,
+        provider: str,
+        track_id: str,
+        user_token: str,
+    ) -> ProviderPlaybackMetadata:
+        adapter = get_provider_adapter(provider)
+        return await adapter.get_track_playback(
+            track_id=track_id,
             user_token=user_token,
         )

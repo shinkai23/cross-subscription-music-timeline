@@ -5,6 +5,7 @@ import pytest
 
 from app.providers.apple_music_adapter import AppleMusicAdapter
 from app.providers.apple_music_adapter import (
+    APPLE_MUSIC_CATALOG_SONG_URL,
     APPLE_MUSIC_LIBRARY_PLAYLIST_URL,
     APPLE_MUSIC_LIBRARY_PLAYLIST_TRACKS_URL,
     APPLE_MUSIC_LIBRARY_PLAYLISTS_URL,
@@ -365,6 +366,87 @@ async def test_add_tracks_to_playlist_posts_track_relationships(monkeypatch) -> 
         track_ids=["apple-track-1", "apple-track-2"],
         user_token="music-user-token",
     )
+
+
+@pytest.mark.anyio
+async def test_get_track_playback_requires_developer_token(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.get_settings",
+        lambda: AppleMusicTestSettings(apple_music_developer_token=""),
+    )
+    adapter = AppleMusicAdapter()
+
+    with pytest.raises(AppleMusicDeveloperTokenRequiredError):
+        await adapter.get_track_playback(track_id="apple-track-1")
+
+
+@pytest.mark.anyio
+async def test_get_track_playback_maps_apple_music_response(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.get_settings",
+        lambda: AppleMusicTestSettings(),
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == APPLE_MUSIC_CATALOG_SONG_URL.format(
+            storefront="us",
+            track_id="apple-track-1",
+        )
+        assert request.headers["Authorization"] == "Bearer developer-token"
+        assert request.headers["Music-User-Token"] == "music-user-token"
+        return httpx.Response(
+            status_code=200,
+            json={
+                "data": [
+                    {
+                        "id": "apple-track-1",
+                        "attributes": {
+                            "url": "https://music.apple.com/song/apple-track-1",
+                            "previews": [
+                                {"url": "https://audio-ssl.itunes.apple.com/preview"}
+                            ],
+                            "artwork": {
+                                "url": "https://is1-ssl.mzstatic.com/image/{w}x{h}bb.jpg",
+                                "width": 600,
+                                "height": 600,
+                            },
+                            "playParams": {
+                                "id": "apple-track-1",
+                                "kind": "song",
+                            },
+                        },
+                    }
+                ]
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async_client_class = httpx.AsyncClient
+
+    def build_client() -> httpx.AsyncClient:
+        return async_client_class(transport=transport)
+
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.httpx.AsyncClient",
+        build_client,
+    )
+    adapter = AppleMusicAdapter()
+
+    playback = await adapter.get_track_playback(
+        track_id="apple-track-1",
+        user_token="music-user-token",
+    )
+
+    assert playback.provider == "apple_music"
+    assert playback.provider_track_id == "apple-track-1"
+    assert playback.playback_id == "apple-track-1"
+    assert playback.preview_url == "https://audio-ssl.itunes.apple.com/preview"
+    assert (
+        playback.artwork_url
+        == "https://is1-ssl.mzstatic.com/image/600x600bb.jpg"
+    )
+    assert playback.provider_url == "https://music.apple.com/song/apple-track-1"
+    assert playback.is_playable is True
 
 
 def test_build_open_url_from_string() -> None:
