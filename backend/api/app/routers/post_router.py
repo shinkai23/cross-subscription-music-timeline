@@ -5,6 +5,7 @@ from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
 from app.repositories.post_repository import PostRepository
+from app.repositories.track_repository import TrackRepository
 from app.schemas.post_schema import PostCreate, PostRead
 from app.services.post_service import PostService
 
@@ -13,7 +14,10 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 def get_post_service(db: Session = Depends(get_db)) -> PostService:
-    return PostService(PostRepository(db))
+    return PostService(
+        repository=PostRepository(db),
+        track_repository=TrackRepository(db),
+    )
 
 
 @router.get("", response_model=list[PostRead])
