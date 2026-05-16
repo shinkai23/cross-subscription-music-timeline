@@ -1,7 +1,18 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    JSON,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -27,6 +38,17 @@ class Track(Base):
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     artwork_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     provider_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    preview_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    playback_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_playable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    metadata_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    provider_metadata: Mapped[dict | None] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

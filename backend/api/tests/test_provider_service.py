@@ -74,6 +74,11 @@ class FakeAdapter:
         return ProviderPlaybackMetadata(
             provider="fake",
             provider_track_id="track-1",
+            title="Everything In Its Right Place",
+            artist_name="Radiohead",
+            album_name="Kid A",
+            duration_ms=251000,
+            metadata={"source": "fake"},
             playback_id="track-1",
             preview_url="https://example.com/preview.mp3",
             artwork_url="https://example.com/artwork.jpg",

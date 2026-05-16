@@ -13,6 +13,7 @@ from app.providers.base import (
     ProviderTrack,
 )
 from app.repositories.service_account_repository import ServiceAccountRepository
+from app.repositories.track_repository import TrackRepository
 from app.schemas.provider_schema import AddTracksToPlaylistRequest
 from app.services.provider_service import ProviderService
 from app.services.service_account_errors import ServiceAccountNotConnectedError
@@ -28,8 +29,12 @@ class AuthContext:
     user_token: str
 
 
-def get_provider_service() -> ProviderService:
-    return ProviderService()
+def get_provider_service(
+    db: Session = Depends(get_db),
+) -> ProviderService:
+    return ProviderService(
+        track_repository=TrackRepository(db),
+    )
 
 
 def get_service_account_service(

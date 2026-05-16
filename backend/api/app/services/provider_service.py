@@ -5,9 +5,16 @@ from app.providers.base import (
     ProviderTrack,
 )
 from app.providers.registry import get_provider_adapter
+from app.repositories.track_repository import TrackRepository
 
 
 class ProviderService:
+    def __init__(
+        self,
+        track_repository: TrackRepository | None = None,
+    ) -> None:
+        self.track_repository = track_repository
+
     async def search_tracks(
         self,
         provider: str,
@@ -65,7 +72,11 @@ class ProviderService:
         user_token: str,
     ) -> ProviderPlaybackMetadata:
         adapter = get_provider_adapter(provider)
-        return await adapter.get_track_playback(
+        playback = await adapter.get_track_playback(
             track_id=track_id,
             user_token=user_token,
         )
+
+        if self.track_repository is not None:
+            self.track_repository.upsert_playback_metadata(playback)
+        return playback

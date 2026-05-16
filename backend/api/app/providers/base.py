@@ -36,6 +36,11 @@ class CreatePlaylistInput(BaseModel):
 class ProviderPlaybackMetadata(BaseModel):
     provider: str
     provider_track_id: str
+    title: str
+    artist_name: str
+    album_name: str | None = None
+    duration_ms: int | None = None
+    metadata: dict | None = None
     playback_id: str
     preview_url: str | None = None
     artwork_url: str | None = None

@@ -399,11 +399,16 @@ async def test_get_track_playback_maps_apple_music_response(monkeypatch) -> None
             json={
                 "data": [
                     {
-                        "id": "apple-track-1",
-                        "attributes": {
-                            "url": "https://music.apple.com/song/apple-track-1",
-                            "previews": [
-                                {"url": "https://audio-ssl.itunes.apple.com/preview"}
+                            "id": "apple-track-1",
+                            "attributes": {
+                                "name": "Apple Track",
+                                "artistName": "Apple Artist",
+                                "albumName": "Apple Album",
+                                "durationInMillis": 210000,
+                                "genreNames": ["Alternative"],
+                                "url": "https://music.apple.com/song/apple-track-1",
+                                "previews": [
+                                    {"url": "https://audio-ssl.itunes.apple.com/preview"}
                             ],
                             "artwork": {
                                 "url": "https://is1-ssl.mzstatic.com/image/{w}x{h}bb.jpg",
@@ -439,6 +444,14 @@ async def test_get_track_playback_maps_apple_music_response(monkeypatch) -> None
 
     assert playback.provider == "apple_music"
     assert playback.provider_track_id == "apple-track-1"
+    assert playback.title == "Apple Track"
+    assert playback.artist_name == "Apple Artist"
+    assert playback.album_name == "Apple Album"
+    assert playback.duration_ms == 210000
+    assert playback.metadata == {
+        "genre_names": ["Alternative"],
+        "play_params": {"id": "apple-track-1", "kind": "song"},
+    }
     assert playback.playback_id == "apple-track-1"
     assert playback.preview_url == "https://audio-ssl.itunes.apple.com/preview"
     assert (

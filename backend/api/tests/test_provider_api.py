@@ -120,6 +120,11 @@ class FakeProviderService:
         return ProviderPlaybackMetadata(
             provider="spotify",
             provider_track_id="track-1",
+            title="Test Track",
+            artist_name="Test Artist",
+            album_name="Test Album",
+            duration_ms=180000,
+            metadata={"source": "fake"},
             playback_id="track-1",
             preview_url="https://p.scdn.co/mp3-preview/track",
             artwork_url="https://i.scdn.co/image/artwork",
@@ -790,6 +795,11 @@ def test_get_track_playback(client: TestClient, db_session: Session) -> None:
     assert response.json() == {
         "provider": "spotify",
         "provider_track_id": "track-1",
+        "title": "Test Track",
+        "artist_name": "Test Artist",
+        "album_name": "Test Album",
+        "duration_ms": 180000,
+        "metadata": {"source": "fake"},
         "playback_id": "track-1",
         "preview_url": "https://p.scdn.co/mp3-preview/track",
         "artwork_url": "https://i.scdn.co/image/artwork",

@@ -169,11 +169,21 @@ class SpotifyAdapter(MusicProviderAdapter):
             self._raise_provider_error(response)
 
         data = response.json()
-        images = data.get("album", {}).get("images", [])
+        album = data.get("album", {})
+        artists = data.get("artists") or []
+        images = album.get("images", [])
 
         return ProviderPlaybackMetadata(
             provider=self.provider,
             provider_track_id=data["id"],
+            title=data["name"],
+            artist_name=artists[0]["name"] if artists else "",
+            album_name=album.get("name"),
+            duration_ms=data.get("duration_ms"),
+            metadata={
+                "explicit": data.get("explicit"),
+                "popularity": data.get("popularity"),
+            },
             playback_id=data["id"],
             preview_url=data.get("preview_url"),
             artwork_url=images[0]["url"] if images else None,

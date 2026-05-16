@@ -213,6 +213,14 @@ class AppleMusicAdapter(MusicProviderAdapter):
         return ProviderPlaybackMetadata(
             provider=self.provider,
             provider_track_id=data["id"],
+            title=attributes["name"],
+            artist_name=attributes["artistName"],
+            album_name=attributes.get("albumName"),
+            duration_ms=attributes.get("durationInMillis"),
+            metadata={
+                "genre_names": attributes.get("genreNames"),
+                "play_params": play_params,
+            },
             playback_id=play_params.get("id") or data["id"],
             preview_url=previews[0].get("url") if previews else None,
             artwork_url=self._build_artwork_url(attributes.get("artwork")),
