@@ -13,6 +13,7 @@ from app.providers.apple_music_adapter import (
     AppleMusicUserTokenRequiredError,
 )
 from app.providers.base import CreatePlaylistInput, ProviderTrack
+from app.providers.error import ProviderApiError
 
 
 @dataclass
@@ -94,6 +95,36 @@ async def test_search_tracks_maps_apple_music_response(monkeypatch) -> None:
     assert tracks[0].duration_ms == 251000
     assert tracks[0].isrc == "GBAYE0000811"
     assert tracks[0].provider_url == "https://music.apple.com/song/1"
+
+
+@pytest.mark.anyio
+async def test_search_tracks_raises_provider_api_error(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.get_settings",
+        lambda: AppleMusicTestSettings(),
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=500, json={"errors": []})
+
+    transport = httpx.MockTransport(handler)
+    async_client_class = httpx.AsyncClient
+
+    def build_client() -> httpx.AsyncClient:
+        return async_client_class(transport=transport)
+
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.httpx.AsyncClient",
+        build_client,
+    )
+    adapter = AppleMusicAdapter()
+
+    with pytest.raises(ProviderApiError) as exc_info:
+        await adapter.search_tracks(query="Radiohead")
+
+    assert exc_info.value.provider == "apple_music"
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.message == "Provider API request failed"
 
 
 @pytest.mark.anyio

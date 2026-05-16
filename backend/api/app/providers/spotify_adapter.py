@@ -41,7 +41,8 @@ class SpotifyAdapter(MusicProviderAdapter):
                 headers={"Authorization": f"Bearer {user_token}"},
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()
         return [
             ProviderTrack(
@@ -70,7 +71,8 @@ class SpotifyAdapter(MusicProviderAdapter):
                 SPOTIFY_PLAYLIST_URL.format(playlist_id=playlist_id),
                 headers={"Authorization": f"Bearer {user_token}"},
             )
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()
 
         tracks = [
@@ -115,7 +117,8 @@ class SpotifyAdapter(MusicProviderAdapter):
                 headers={"Authorization": f"Bearer {user_token}"},
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()
 
         return ProviderPlaylist(
@@ -143,20 +146,9 @@ class SpotifyAdapter(MusicProviderAdapter):
                 json={"uris": uris},
                 headers={"Authorization": f"Bearer {user_token}"},
             )
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
 
     def build_open_url(self, item: Any) -> str:
-        if isinstance(item, str):
-            provider_id = item
-        elif isinstance(item, dict):
-            provider_id = (
-                item.get("provider_track_id") or item.get("provider_id") or item.get("id")
-            )
-        else:
-            provider_id = (
-                getattr(item, "provider_track_id", None)
-                or getattr(item, "provider_id", None)
-                or getattr(item, "id", None)
-            )
-
+        provider_id = self._extract_provider_id(item)
         return f"https://open.spotify.com/track/{provider_id}"

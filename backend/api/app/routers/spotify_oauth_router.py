@@ -12,10 +12,8 @@ from app.schemas.spotify_auth_schema import (
     SpotifyConnectResponse,
 )
 
-from app.services.service_account_service import (
-    ServiceAccountAlreadyConnectedError,
-    ServiceAccountService,
-)
+from app.services.service_account_errors import ServiceAccountAlreadyConnectedError
+from app.services.service_account_service import ServiceAccountService
 from app.services.token_encryption_service import TokenEncryptionService
 
 from app.services.spotify_auth_service import (

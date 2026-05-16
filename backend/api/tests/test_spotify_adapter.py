@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 from app.providers.base import CreatePlaylistInput, ProviderTrack
+from app.providers.error import ProviderApiError
 from app.providers.spotify_adapter import (
     SPOTIFY_CURRENT_USER_PLAYLIST_URL,
     SPOTIFY_PLAYLIST_TRACKS_URL,
@@ -75,6 +76,31 @@ async def test_search_tracks_maps_spotify_response(monkeypatch) -> None:
     assert tracks[0].duration_ms == 320000
     assert tracks[0].isrc == "GBDUW0000053"
     assert tracks[0].provider_url == "https://open.spotify.com/track/1"
+
+
+@pytest.mark.anyio
+async def test_search_tracks_raises_provider_api_error(monkeypatch) -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=429, json={"error": {"status": 429}})
+
+    transport = httpx.MockTransport(handler)
+    async_client_class = httpx.AsyncClient
+
+    def build_client() -> httpx.AsyncClient:
+        return async_client_class(transport=transport)
+
+    monkeypatch.setattr(
+        "app.providers.spotify_adapter.httpx.AsyncClient",
+        build_client,
+    )
+    adapter = SpotifyAdapter()
+
+    with pytest.raises(ProviderApiError) as exc_info:
+        await adapter.search_tracks(query="Daft Punk", user_token="access-token")
+
+    assert exc_info.value.provider == "spotify"
+    assert exc_info.value.status_code == 429
+    assert exc_info.value.message == "Provider rate limit exceeded"
 
 
 @pytest.mark.anyio

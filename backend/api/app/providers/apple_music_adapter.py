@@ -17,6 +17,7 @@ APPLE_MUSIC_LIBRARY_PLAYLIST_TRACKS_URL = (
     "https://api.music.apple.com/v1/me/library/playlists/{playlist_id}/tracks"
 )
 
+
 class AppleMusicDeveloperTokenRequiredError(Exception):
     pass
 
@@ -52,7 +53,8 @@ class AppleMusicAdapter(MusicProviderAdapter):
                 },
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()
 
         return [
@@ -89,7 +91,8 @@ class AppleMusicAdapter(MusicProviderAdapter):
                 },
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()["data"][0]
 
         return ProviderPlaylist(
@@ -126,7 +129,8 @@ class AppleMusicAdapter(MusicProviderAdapter):
                 },
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
         data = response.json()["data"][0]
 
         return ProviderPlaylist(
@@ -169,20 +173,9 @@ class AppleMusicAdapter(MusicProviderAdapter):
                 },
             )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_provider_error(response)
 
     def build_open_url(self, item: Any) -> str:
-        if isinstance(item, str):
-            provider_id = item
-        elif isinstance(item, dict):
-            provider_id = (
-                item.get("provider_track_id") or item.get("provider_id") or item.get("id")
-            )
-        else:
-            provider_id = (
-                getattr(item, "provider_track_id", None)
-                or getattr(item, "provider_id", None)
-                or getattr(item, "id", None)
-            )
-
+        provider_id = self._extract_provider_id(item)
         return f"https://music.apple.com/song/{provider_id}"

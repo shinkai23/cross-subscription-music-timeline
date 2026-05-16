@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
+import httpx
+
 from pydantic import BaseModel, Field
+
+from app.providers.error import ProviderApiError
 
 
 class ProviderTrack(BaseModel):
@@ -37,11 +41,19 @@ class MusicProviderAdapter(ABC):
     provider: str
 
     @abstractmethod
-    async def search_tracks(self, query: str, user_token: str | None = None) -> list[ProviderTrack]:
+    async def search_tracks(
+        self,
+        query: str,
+        user_token: str | None = None,
+    ) -> list[ProviderTrack]:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_playlist(self, playlist_id: str, user_token: str | None = None) -> ProviderPlaylist:
+    async def get_playlist(
+        self,
+        playlist_id: str,
+        user_token: str | None = None,
+    ) -> ProviderPlaylist:
         raise NotImplementedError
 
     @abstractmethod
@@ -64,3 +76,43 @@ class MusicProviderAdapter(ABC):
     @abstractmethod
     def build_open_url(self, item: ProviderItemRef | dict[str, Any] | str) -> str:
         raise NotImplementedError
+
+    def _raise_provider_error(self, response: httpx.Response) -> None:
+        raise ProviderApiError(
+            provider=self.provider,
+            status_code=response.status_code,
+            message=self._build_provider_error_message(response.status_code),
+        )
+
+    def _build_provider_error_message(self, status_code: int) -> str:
+        if status_code == 401:
+            return "Provider access token is invalid"
+        if status_code == 403:
+            return "Provider permission denied"
+        if status_code == 404:
+            return "Provider resource not found"
+        if status_code == 429:
+            return "Provider rate limit exceeded"
+        return "Provider API request failed"
+
+    def _extract_provider_id(self, item: ProviderItemRef | dict[str, Any] | str) -> str:
+        if isinstance(item, str):
+            return item
+
+        if isinstance(item, dict):
+            provider_id = (
+                item.get("provider_track_id")
+                or item.get("provider_id")
+                or item.get("id")
+            )
+        else:
+            provider_id = (
+                getattr(item, "provider_track_id", None)
+                or getattr(item, "provider_id", None)
+                or getattr(item, "id", None)
+            )
+
+        if provider_id is None:
+            raise ValueError("Provider item id is required")
+
+        return provider_id

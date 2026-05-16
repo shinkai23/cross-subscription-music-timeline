@@ -5,10 +5,12 @@ from app.models.service_account import ServiceAccount
 from app.models.user import User
 from app.repositories.service_account_repository import ServiceAccountRepository
 from app.schemas.spotify_auth_schema import SpotifyTokenResponse
-from app.services.service_account_service import (
+from app.services.service_account_errors import (
     ServiceAccountAlreadyConnectedError,
     ServiceAccountNotConnectedError,
     ServiceAccountRefreshTokenMissingError,
+)
+from app.services.service_account_service import (
     ServiceAccountService,
 )
 from app.services.token_encryption_service import TokenEncryptionService
@@ -122,15 +124,93 @@ def test_connect_spotify_account_rejects_account_connected_to_other_user(
         )
 
 
+def test_connect_apple_music_account_creates_service_account(
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    repository = ServiceAccountRepository(db_session)
+    service = ServiceAccountService(repository, FakeTokenEncryptionService())
+
+    service_account = service.connect_apple_music_account(
+        user=user,
+        provider_user_id="apple-user-1",
+        music_user_token="music-user-token",
+    )
+
+    assert service_account.user_id == user.id
+    assert service_account.provider == "apple_music"
+    assert service_account.provider_user_id == "apple-user-1"
+    assert service_account.encrypted_refresh_token == "encrypted:music-user-token"
+    assert service_account.scopes is None
+
+
+def test_connect_apple_music_account_returns_existing_account_for_same_user(
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    repository = ServiceAccountRepository(db_session)
+    service = ServiceAccountService(repository, FakeTokenEncryptionService())
+    existing_service_account = repository.create_service_account(
+        user_id=user.id,
+        provider="apple_music",
+        provider_user_id="apple-user-1",
+        encrypted_refresh_token="existing-music-user-token",
+    )
+
+    service_account = service.connect_apple_music_account(
+        user=user,
+        provider_user_id="apple-user-1",
+        music_user_token="music-user-token",
+    )
+
+    assert service_account.id == existing_service_account.id
+    assert db_session.query(ServiceAccount).count() == 1
+
+
+def test_connect_apple_music_account_rejects_account_connected_to_other_user(
+    db_session: Session,
+) -> None:
+    connected_user = User(display_name="Connected User", handle="connected-user")
+    current_user = User(display_name="Current User", handle="current-user")
+    db_session.add_all([connected_user, current_user])
+    db_session.commit()
+    db_session.refresh(connected_user)
+    db_session.refresh(current_user)
+    repository = ServiceAccountRepository(db_session)
+    service = ServiceAccountService(repository, FakeTokenEncryptionService())
+    repository.create_service_account(
+        user_id=connected_user.id,
+        provider="apple_music",
+        provider_user_id="apple-user-1",
+    )
+
+    with pytest.raises(ServiceAccountAlreadyConnectedError):
+        service.connect_apple_music_account(
+            user=current_user,
+            provider_user_id="apple-user-1",
+            music_user_token="music-user-token",
+        )
+
+
 @pytest.mark.anyio
 async def test_refresh_spotify_access_token_for_account(
     db_session: Session,
     monkeypatch,
 ) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     repository = ServiceAccountRepository(db_session)
     service = ServiceAccountService(repository, FakeTokenEncryptionService())
-    service_account = ServiceAccount(
-        user_id="user-1",
+    repository.create_service_account(
+        user_id=user.id,
         provider="spotify",
         provider_user_id="spotify-user-1",
         encrypted_refresh_token="encrypted:refresh-token",
@@ -148,34 +228,40 @@ async def test_refresh_spotify_access_token_for_account(
         )
 
     monkeypatch.setattr(
-        "app.services.service_account_service.refresh_spotify_access_token",
+        "app.services.provider_token.spotify_token_service.refresh_spotify_access_token",
         fake_refresh_spotify_access_token,
     )
 
-    token_response = await service.refresh_spotify_access_token_for_account(
-        service_account
+    access_token = await service.get_provider_access_token(
+        user=user,
+        provider="spotify",
     )
 
-    assert token_response.access_token == "new-access-token"
-    assert token_response.token_type == "Bearer"
-    assert token_response.expires_in == 3600
+    assert access_token == "new-access-token"
 
 
 @pytest.mark.anyio
 async def test_refresh_spotify_access_token_for_account_rejects_missing_token(
     db_session: Session,
 ) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
     repository = ServiceAccountRepository(db_session)
     service = ServiceAccountService(repository, FakeTokenEncryptionService())
-    service_account = ServiceAccount(
-        user_id="user-1",
+    repository.create_service_account(
+        user_id=user.id,
         provider="spotify",
         provider_user_id="spotify-user-1",
         encrypted_refresh_token=None,
     )
 
     with pytest.raises(ServiceAccountRefreshTokenMissingError):
-        await service.refresh_spotify_access_token_for_account(service_account)
+        await service.get_provider_access_token(
+            user=user,
+            provider="spotify",
+        )
 
 
 @pytest.mark.anyio
@@ -207,7 +293,7 @@ async def test_get_provider_access_token_for_spotify(
         )
 
     monkeypatch.setattr(
-        "app.services.service_account_service.refresh_spotify_access_token",
+        "app.services.provider_token.spotify_token_service.refresh_spotify_access_token",
         fake_refresh_spotify_access_token,
     )
 
@@ -238,7 +324,7 @@ async def test_get_provider_access_token_rejects_not_connected_provider(
 
 
 @pytest.mark.anyio
-async def test_get_provider_access_token_rejects_unsupported_provider(
+async def test_get_provider_access_token_for_apple_music(
     db_session: Session,
 ) -> None:
     user = User(display_name="Test User", handle="test-user")
@@ -254,8 +340,9 @@ async def test_get_provider_access_token_rejects_unsupported_provider(
         encrypted_refresh_token="encrypted:music-user-token",
     )
 
-    with pytest.raises(ServiceAccountNotConnectedError):
-        await service.get_provider_access_token(
-            user=user,
-            provider="apple_music",
-        )
+    access_token = await service.get_provider_access_token(
+        user=user,
+        provider="apple_music",
+    )
+
+    assert access_token == "music-user-token"
