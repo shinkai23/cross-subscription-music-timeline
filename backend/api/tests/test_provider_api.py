@@ -6,7 +6,11 @@ from app.core.security import create_access_token
 from app.main import app
 from app.models.service_account import ServiceAccount
 from app.models.user import User
-from app.providers.apple_music_adapter import APPLE_MUSIC_LIBRARY_PLAYLIST_URL
+from app.providers.apple_music_adapter import (
+    APPLE_MUSIC_LIBRARY_PLAYLIST_TRACKS_URL,
+    APPLE_MUSIC_LIBRARY_PLAYLIST_URL,
+    APPLE_MUSIC_LIBRARY_PLAYLISTS_URL,
+)
 from app.providers.base import CreatePlaylistInput, ProviderPlaylist, ProviderTrack
 from app.providers.error import ProviderApiError
 from app.routers.provider_router import (
@@ -525,6 +529,88 @@ def test_create_playlist(client: TestClient, db_session: Session) -> None:
     }
 
 
+def test_create_apple_music_playlist_calls_adapter_with_connected_music_user_token(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    db_session.add(
+        ServiceAccount(
+            user_id=user.id,
+            provider="apple_music",
+            provider_user_id="apple-user-1",
+            encrypted_refresh_token=TokenEncryptionService().encrypt(
+                "music-user-token"
+            ),
+        )
+    )
+    db_session.commit()
+    token = create_access_token(subject=user.id)
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.get_settings",
+        lambda: AppleMusicTestSettings(),
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == APPLE_MUSIC_LIBRARY_PLAYLISTS_URL
+        assert request.method == "POST"
+        assert request.headers["Authorization"] == "Bearer developer-token"
+        assert request.headers["Music-User-Token"] == "music-user-token"
+        assert request.headers["Content-Type"] == "application/json"
+        assert request.content == (
+            b'{"attributes":{"name":"New Playlist",'
+            b'"description":"Created from app"}}'
+        )
+        return httpx.Response(
+            status_code=201,
+            json={
+                "data": [
+                    {
+                        "id": "library-playlist-1",
+                        "attributes": {
+                            "name": "New Playlist",
+                            "url": "https://music.apple.com/playlist/1",
+                        },
+                    }
+                ]
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    async_client_class = httpx.AsyncClient
+
+    def build_client() -> httpx.AsyncClient:
+        return async_client_class(transport=transport)
+
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.httpx.AsyncClient",
+        build_client,
+    )
+
+    response = client.post(
+        "/providers/apple_music/playlists",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "title": "New Playlist",
+            "description": "Created from app",
+            "track_ids": [],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "provider": "apple_music",
+        "provider_playlist_id": "library-playlist-1",
+        "title": "New Playlist",
+        "tracks": [],
+        "provider_url": "https://music.apple.com/playlist/1",
+    }
+
+
 def test_create_playlist_requires_authentication(client: TestClient) -> None:
     response = client.post(
         "/providers/spotify/playlists",
@@ -557,6 +643,67 @@ def test_add_tracks_to_playlist(client: TestClient, db_session: Session) -> None
     finally:
         app.dependency_overrides.pop(get_provider_service, None)
         app.dependency_overrides.pop(get_service_account_service, None)
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_add_tracks_to_apple_music_playlist_calls_adapter_with_connected_token(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    db_session.add(
+        ServiceAccount(
+            user_id=user.id,
+            provider="apple_music",
+            provider_user_id="apple-user-1",
+            encrypted_refresh_token=TokenEncryptionService().encrypt(
+                "music-user-token"
+            ),
+        )
+    )
+    db_session.commit()
+    token = create_access_token(subject=user.id)
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.get_settings",
+        lambda: AppleMusicTestSettings(),
+    )
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == APPLE_MUSIC_LIBRARY_PLAYLIST_TRACKS_URL.format(
+            playlist_id="library-playlist-1"
+        )
+        assert request.method == "POST"
+        assert request.headers["Authorization"] == "Bearer developer-token"
+        assert request.headers["Music-User-Token"] == "music-user-token"
+        assert request.headers["Content-Type"] == "application/json"
+        assert request.content == (
+            b'{"data":[{"id":"apple-track-1","type":"songs"},'
+            b'{"id":"apple-track-2","type":"songs"}]}'
+        )
+        return httpx.Response(status_code=202)
+
+    transport = httpx.MockTransport(handler)
+    async_client_class = httpx.AsyncClient
+
+    def build_client() -> httpx.AsyncClient:
+        return async_client_class(transport=transport)
+
+    monkeypatch.setattr(
+        "app.providers.apple_music_adapter.httpx.AsyncClient",
+        build_client,
+    )
+
+    response = client.post(
+        "/providers/apple_music/playlists/library-playlist-1/tracks",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"track_ids": ["apple-track-1", "apple-track-2"]},
+    )
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
