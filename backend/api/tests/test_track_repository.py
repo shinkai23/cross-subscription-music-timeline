@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.models.track import Track
 from app.providers.base import ProviderPlaybackMetadata
 from app.repositories.track_repository import TrackRepository
 
@@ -80,3 +81,53 @@ def test_upsert_playback_metadata_updates_existing_track(
     assert updated_track.provider_url == "https://music.apple.com/song/apple-track-1"
     assert updated_track.is_playable is True
     assert updated_track.provider_metadata == {"catalog": "us"}
+
+
+def test_list_by_provider_track_ids_returns_empty_dict_for_empty_keys(
+    db_session: Session,
+) -> None:
+    repository = TrackRepository(db_session)
+
+    tracks = repository.list_by_provider_track_ids([])
+
+    assert tracks == {}
+
+
+def test_list_by_provider_track_ids_returns_matching_tracks(
+    db_session: Session,
+) -> None:
+    repository = TrackRepository(db_session)
+    spotify_track = Track(
+        provider="spotify",
+        provider_track_id="track-1",
+        title="Spotify Track",
+        artist_name="Spotify Artist",
+    )
+    apple_music_track = Track(
+        provider="apple_music",
+        provider_track_id="track-1",
+        title="Apple Music Track",
+        artist_name="Apple Music Artist",
+    )
+    extra_track = Track(
+        provider="spotify",
+        provider_track_id="track-2",
+        title="Extra Track",
+        artist_name="Extra Artist",
+    )
+    db_session.add_all([spotify_track, apple_music_track, extra_track])
+    db_session.commit()
+
+    tracks = repository.list_by_provider_track_ids(
+        [
+            ("spotify", "track-1"),
+            ("apple_music", "track-1"),
+        ]
+    )
+
+    assert set(tracks) == {
+        ("spotify", "track-1"),
+        ("apple_music", "track-1"),
+    }
+    assert tracks[("spotify", "track-1")].id == spotify_track.id
+    assert tracks[("apple_music", "track-1")].id == apple_music_track.id

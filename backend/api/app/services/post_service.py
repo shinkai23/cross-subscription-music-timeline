@@ -16,14 +16,17 @@ class PostService:
 
     def list_posts(self, limit: int = 50, offset: int = 0) -> list[PostRead]:
         posts = self.repository.list_posts(limit=limit, offset=offset)
+        track_keys = [
+            (post.source_provider, post.source_item_id)
+            for post in posts
+        ]
+
+        track_by_key = self.track_repository.list_by_provider_track_ids(track_keys)
         results: list[PostRead] = []
         for post in posts:
-            track = self.track_repository.get_by_provider_track_id(
-                provider=post.source_provider,
-                provider_track_id=post.source_item_id,
-            )
-
+            track = track_by_key.get((post.source_provider, post.source_item_id))
             playback = self._build_playback_read(track)
+
             results.append(
                 PostRead(
                     id=post.id,

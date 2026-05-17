@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.orm import Session
 
 from app.models.track import Track
@@ -22,6 +22,24 @@ class TrackRepository:
         )
 
         return self.db.scalar(statement)
+
+    def list_by_provider_track_ids(
+        self,
+        keys: list[tuple[str, str]],
+    ) -> dict[tuple[str, str], Track]:
+        if not keys:
+            return {}
+
+        statement = select(Track).where(
+            tuple_(Track.provider, Track.provider_track_id).in_(keys)
+        )
+
+        tracks = self.db.scalars(statement).all()
+
+        return {
+            (track.provider, track.provider_track_id): track
+            for track in tracks
+        }
 
     def upsert_playback_metadata(
         self,
