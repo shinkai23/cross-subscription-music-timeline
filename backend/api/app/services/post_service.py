@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.track import Track
 from app.models.user import User
 from app.repositories.post_repository import PostRepository
@@ -14,8 +16,12 @@ class PostService:
         self.repository = repository
         self.track_repository = track_repository
 
-    def list_posts(self, limit: int = 50, offset: int = 0) -> list[PostRead]:
-        posts = self.repository.list_posts(limit=limit, offset=offset)
+    def list_posts(
+        self,
+        limit: int = 50,
+        before: datetime | None = None,
+    ) -> list[PostRead]:
+        posts = self.repository.list_posts(limit=limit, before=before)
         track_keys = [
             (post.source_provider, post.source_item_id)
             for post in posts

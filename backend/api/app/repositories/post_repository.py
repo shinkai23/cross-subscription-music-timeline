@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -10,8 +12,10 @@ class PostRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_posts(self, limit: int = 50, offset: int = 0) -> list[Post]:
-        statement = select(Post).order_by(Post.created_at.desc()).limit(limit).offset(offset)
+    def list_posts(self, limit: int = 50, before: datetime | None = None) -> list[Post]:
+        statement = select(Post).order_by(Post.created_at.desc()).limit(limit)
+        if before is not None:
+            statement = statement.where(Post.created_at < before)
         return list(self.db.scalars(statement).all())
 
     def create_post(self, post_in: PostCreate, user_id: str) -> Post:

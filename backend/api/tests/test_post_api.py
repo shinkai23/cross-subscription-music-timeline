@@ -1,7 +1,10 @@
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
+from app.models.post import Post
 from app.models.track import Track
 from app.models.user import User
 
@@ -93,6 +96,42 @@ def test_list_posts_includes_playback_when_track_exists(
         "playback_id": "spotify-track-1",
         "is_playable": True,
     }
+
+
+def test_list_posts_filters_by_before_cursor(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    newer_post = Post(
+        user=user,
+        item_type="track",
+        source_provider="spotify",
+        source_item_id="newer-track",
+        caption="newer post",
+        created_at=datetime(2026, 5, 17, 12, 0, tzinfo=timezone.utc),
+    )
+    older_post = Post(
+        user=user,
+        item_type="track",
+        source_provider="spotify",
+        source_item_id="older-track",
+        caption="older post",
+        created_at=datetime(2026, 5, 17, 10, 0, tzinfo=timezone.utc),
+    )
+    db_session.add_all([user, newer_post, older_post])
+    db_session.commit()
+
+    response = client.get(
+        "/posts",
+        params={"before": "2026-05-17T11:00:00+00:00"},
+    )
+
+    assert response.status_code == 200
+    posts = response.json()
+    assert len(posts) == 1
+    assert posts[0]["id"] == older_post.id
+    assert posts[0]["caption"] == "older post"
 
 
 def test_create_post_requires_authentication(client: TestClient) -> None:

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -23,10 +25,10 @@ def get_post_service(db: Session = Depends(get_db)) -> PostService:
 @router.get("", response_model=list[PostRead])
 def list_posts(
     limit: int = Query(default=50, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    before: datetime | None = Query(default=None),
     service: PostService = Depends(get_post_service),
 ):
-    return service.list_posts(limit=limit, offset=offset)
+    return service.list_posts(limit=limit, before=before)
 
 
 @router.post("", response_model=PostRead, status_code=status.HTTP_201_CREATED)
