@@ -40,6 +40,7 @@ class ProviderPlaybackMetadata(BaseModel):
     artist_name: str
     album_name: str | None = None
     duration_ms: int | None = None
+    isrc: str | None = None
     metadata: dict | None = None
     playback_id: str
     preview_url: str | None = None

@@ -16,9 +16,12 @@ class Post(Base):
         default=lambda: str(uuid4()),
     )
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
-    item_type: Mapped[str] = mapped_column(String(40))
-    source_provider: Mapped[str] = mapped_column(String(40), index=True)
-    source_item_id: Mapped[str] = mapped_column(String(160), index=True)
+    track_id: Mapped[str] = mapped_column(ForeignKey("tracks.id"), index=True)
+    item_type: Mapped[str] = mapped_column(String(40), default="track")
+    source_provider_track_id: Mapped[str] = mapped_column(
+        ForeignKey("provider_tracks.id"),
+        index=True,
+    )
     caption: Mapped[str | None] = mapped_column(Text, nullable=True)
     visibility: Mapped[str] = mapped_column(String(40), default="public")
     created_at: Mapped[datetime] = mapped_column(
@@ -28,4 +31,6 @@ class Post(Base):
     )
 
     user = relationship("User", back_populates="posts")
+    track = relationship("Track")
+    source_provider_track = relationship("ProviderTrack")
     reports = relationship("Report", back_populates="post")

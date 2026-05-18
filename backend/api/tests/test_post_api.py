@@ -5,24 +5,36 @@ from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
 from app.models.post import Post
+from app.models.provider_track import ProviderTrack
 from app.models.track import Track
 from app.models.user import User
 
 
 def test_create_and_list_posts(client: TestClient, db_session: Session) -> None:
     user = User(display_name="Test User", handle="test-user")
-    db_session.add(user)
+    track = Track(
+        title="Canonical Track",
+        artist_name="Canonical Artist",
+    )
+    provider_track = ProviderTrack(
+        track=track,
+        provider="spotify",
+        provider_track_id="spotify-track-1",
+        title="Test Track",
+        artist_name="Test Artist",
+    )
+    db_session.add_all([user, track, provider_track])
     db_session.commit()
     db_session.refresh(user)
+    db_session.refresh(provider_track)
     token = create_access_token(subject=user.id)
 
     create_response = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "item_type": "track",
-            "source_provider": "spotify",
-            "source_item_id": "spotify-track-1",
+            "provider": "spotify",
+            "provider_track_id": "spotify-track-1",
             "caption": "first post",
         },
     )
@@ -30,8 +42,8 @@ def test_create_and_list_posts(client: TestClient, db_session: Session) -> None:
     assert create_response.status_code == 201
     created_post = create_response.json()
     assert created_post["user_id"] == user.id
-    assert created_post["source_provider"] == "spotify"
-    assert created_post["source_item_id"] == "spotify-track-1"
+    assert created_post["track_id"] == track.id
+    assert created_post["source_provider_track_id"] == provider_track.id
 
     list_response = client.get("/posts")
 
@@ -40,7 +52,8 @@ def test_create_and_list_posts(client: TestClient, db_session: Session) -> None:
     posts = data["items"]
     assert len(posts) == 1
     assert posts[0]["id"] == created_post["id"]
-    assert posts[0]["playback"] is None
+    assert posts[0]["playback"]["provider"] == "spotify"
+    assert posts[0]["playback"]["provider_track_id"] == "spotify-track-1"
     assert data["next_before"] == posts[0]["created_at"]
 
 
@@ -50,6 +63,11 @@ def test_list_posts_includes_playback_when_track_exists(
 ) -> None:
     user = User(display_name="Test User", handle="test-user")
     track = Track(
+        title="Canonical Track",
+        artist_name="Canonical Artist",
+    )
+    provider_track = ProviderTrack(
+        track=track,
         provider="spotify",
         provider_track_id="spotify-track-1",
         title="Test Track",
@@ -62,7 +80,7 @@ def test_list_posts_includes_playback_when_track_exists(
         playback_id="spotify-track-1",
         is_playable=True,
     )
-    db_session.add_all([user, track])
+    db_session.add_all([user, track, provider_track])
     db_session.commit()
     db_session.refresh(user)
     token = create_access_token(subject=user.id)
@@ -71,9 +89,8 @@ def test_list_posts_includes_playback_when_track_exists(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "item_type": "track",
-            "source_provider": "spotify",
-            "source_item_id": "spotify-track-1",
+            "provider": "spotify",
+            "provider_track_id": "spotify-track-1",
             "caption": "track with playback",
         },
     )
@@ -107,23 +124,46 @@ def test_list_posts_filters_by_before_cursor(
     db_session: Session,
 ) -> None:
     user = User(display_name="Test User", handle="test-user")
+    track = Track(
+        title="Canonical Track",
+        artist_name="Canonical Artist",
+    )
+    newer_provider_track = ProviderTrack(
+        track=track,
+        provider="spotify",
+        provider_track_id="newer-track",
+    )
+    older_provider_track = ProviderTrack(
+        track=track,
+        provider="spotify",
+        provider_track_id="older-track",
+    )
     newer_post = Post(
         user=user,
+        track=track,
+        source_provider_track=newer_provider_track,
         item_type="track",
-        source_provider="spotify",
-        source_item_id="newer-track",
         caption="newer post",
         created_at=datetime(2026, 5, 17, 12, 0, tzinfo=timezone.utc),
     )
     older_post = Post(
         user=user,
+        track=track,
+        source_provider_track=older_provider_track,
         item_type="track",
-        source_provider="spotify",
-        source_item_id="older-track",
         caption="older post",
         created_at=datetime(2026, 5, 17, 10, 0, tzinfo=timezone.utc),
     )
-    db_session.add_all([user, newer_post, older_post])
+    db_session.add_all(
+        [
+            user,
+            track,
+            newer_provider_track,
+            older_provider_track,
+            newer_post,
+            older_post,
+        ]
+    )
     db_session.commit()
 
     response = client.get(
@@ -144,9 +184,8 @@ def test_create_post_requires_authentication(client: TestClient) -> None:
     response = client.post(
         "/posts",
         json={
-            "item_type": "track",
-            "source_provider": "spotify",
-            "source_item_id": "spotify-track-1",
+            "provider": "spotify",
+            "provider_track_id": "spotify-track-1",
         },
     )
 
@@ -167,9 +206,31 @@ def test_create_post_rejects_invalid_payload(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
         json={
-            "item_type": "track",
-            "source_provider": "spotify",
+            "provider": "spotify",
         },
     )
 
     assert response.status_code == 422
+
+
+def test_create_post_returns_404_when_provider_track_missing(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(subject=user.id)
+
+    response = client.post(
+        "/posts",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "provider": "spotify",
+            "provider_track_id": "missing-track",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Provider track not found"}

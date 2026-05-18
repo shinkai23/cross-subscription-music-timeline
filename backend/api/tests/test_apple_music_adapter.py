@@ -405,11 +405,12 @@ async def test_get_track_playback_maps_apple_music_response(monkeypatch) -> None
                                 "artistName": "Apple Artist",
                                 "albumName": "Apple Album",
                                 "durationInMillis": 210000,
+                                "isrc": "GBAYE0000811",
                                 "genreNames": ["Alternative"],
                                 "url": "https://music.apple.com/song/apple-track-1",
                                 "previews": [
                                     {"url": "https://audio-ssl.itunes.apple.com/preview"}
-                            ],
+                                ],
                             "artwork": {
                                 "url": "https://is1-ssl.mzstatic.com/image/{w}x{h}bb.jpg",
                                 "width": 600,
@@ -448,6 +449,7 @@ async def test_get_track_playback_maps_apple_music_response(monkeypatch) -> None
     assert playback.artist_name == "Apple Artist"
     assert playback.album_name == "Apple Album"
     assert playback.duration_ms == 210000
+    assert playback.isrc == "GBAYE0000811"
     assert playback.metadata == {
         "genre_names": ["Alternative"],
         "play_params": {"id": "apple-track-1", "kind": "song"},

@@ -1,20 +1,24 @@
 from datetime import datetime
 
-from app.models.track import Track
+from app.models.provider_track import ProviderTrack
 from app.models.user import User
+from app.repositories.provider_track_repository import ProviderTrackRepository
 from app.repositories.post_repository import PostRepository
-from app.repositories.track_repository import TrackRepository
 from app.schemas.post_schema import PostCreate, PostListRead, PostPlaybackRead, PostRead
+
+
+class ProviderTrackNotFoundError(Exception):
+    pass
 
 
 class PostService:
     def __init__(
         self,
         repository: PostRepository,
-        track_repository: TrackRepository,
+        provider_track_repository: ProviderTrackRepository,
     ) -> None:
         self.repository = repository
-        self.track_repository = track_repository
+        self.provider_track_repository = provider_track_repository
 
     def list_posts(
         self,
@@ -22,24 +26,28 @@ class PostService:
         before: datetime | None = None,
     ) -> PostListRead:
         posts = self.repository.list_posts(limit=limit, before=before)
-        track_keys = [
-            (post.source_provider, post.source_item_id)
+
+        provider_track_ids = [
+            post.source_provider_track_id
             for post in posts
         ]
 
-        track_by_key = self.track_repository.list_by_provider_track_ids(track_keys)
+        provider_track_by_id = self.provider_track_repository.list_by_ids(
+            provider_track_ids
+        )
+
         results: list[PostRead] = []
         for post in posts:
-            track = track_by_key.get((post.source_provider, post.source_item_id))
-            playback = self._build_playback_read(track)
+            provider_track = provider_track_by_id.get(post.source_provider_track_id)
+            playback = self._build_playback_read(provider_track)
 
             results.append(
                 PostRead(
                     id=post.id,
                     user_id=post.user_id,
+                    track_id=post.track_id,
+                    source_provider_track_id=post.source_provider_track_id,
                     item_type=post.item_type,
-                    source_provider=post.source_provider,
-                    source_item_id=post.source_item_id,
                     caption=post.caption,
                     visibility=post.visibility,
                     created_at=post.created_at,
@@ -52,23 +60,52 @@ class PostService:
             next_before=results[-1].created_at if results else None,
         )
 
-    def create_post(self, post_in: PostCreate, current_user: User):
-        return self.repository.create_post(post_in, user_id=current_user.id)
+    def create_post(self, post_in: PostCreate, current_user: User) -> PostRead:
+        provider_track = self.provider_track_repository.get_by_provider_track_id(
+            provider=post_in.provider,
+            provider_track_id=post_in.provider_track_id,
+        )
 
-    def _build_playback_read(self, track: Track | None) -> PostPlaybackRead | None:
-        if track is None:
+        if provider_track is None:
+            raise ProviderTrackNotFoundError
+
+        post = self.repository.create_post(
+            user_id=current_user.id,
+            track_id=provider_track.track_id,
+            source_provider_track_id=provider_track.id,
+            caption=post_in.caption,
+            visibility=post_in.visibility,
+        )
+
+        return PostRead(
+            id=post.id,
+            user_id=post.user_id,
+            track_id=post.track_id,
+            source_provider_track_id=post.source_provider_track_id,
+            item_type=post.item_type,
+            caption=post.caption,
+            visibility=post.visibility,
+            created_at=post.created_at,
+            playback=self._build_playback_read(provider_track),
+        )
+
+    def _build_playback_read(
+        self,
+        provider_track: ProviderTrack | None,
+    ) -> PostPlaybackRead | None:
+        if provider_track is None:
             return None
 
         return PostPlaybackRead(
-            provider=track.provider,
-            provider_track_id=track.provider_track_id,
-            title=track.title,
-            artist_name=track.artist_name,
-            album_name=track.album_name,
-            duration_ms=track.duration_ms,
-            artwork_url=track.artwork_url,
-            provider_url=track.provider_url,
-            preview_url=track.preview_url,
-            playback_id=track.playback_id,
-            is_playable=track.is_playable,
+            provider=provider_track.provider,
+            provider_track_id=provider_track.provider_track_id,
+            title=provider_track.title or "",
+            artist_name=provider_track.artist_name or "",
+            album_name=provider_track.album_name,
+            duration_ms=provider_track.duration_ms,
+            artwork_url=provider_track.artwork_url,
+            provider_url=provider_track.provider_url,
+            preview_url=provider_track.preview_url,
+            playback_id=provider_track.playback_id,
+            is_playable=provider_track.is_playable,
         )

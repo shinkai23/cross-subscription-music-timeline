@@ -1,15 +1,15 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
+from app.repositories.provider_track_repository import ProviderTrackRepository
 from app.repositories.post_repository import PostRepository
-from app.repositories.track_repository import TrackRepository
 from app.schemas.post_schema import PostCreate, PostListRead, PostRead
-from app.services.post_service import PostService
+from app.services.post_service import PostService, ProviderTrackNotFoundError
 
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 def get_post_service(db: Session = Depends(get_db)) -> PostService:
     return PostService(
         repository=PostRepository(db),
-        track_repository=TrackRepository(db),
+        provider_track_repository=ProviderTrackRepository(db),
     )
 
 
@@ -37,4 +37,10 @@ def create_post(
     current_user: User = Depends(get_current_user),
     service: PostService = Depends(get_post_service),
 ):
-    return service.create_post(post_in, current_user=current_user)
+    try:
+        return service.create_post(post_in, current_user=current_user)
+    except ProviderTrackNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider track not found",
+        ) from exc

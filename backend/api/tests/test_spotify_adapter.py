@@ -301,23 +301,24 @@ async def test_get_track_playback_maps_spotify_response(monkeypatch) -> None:
         assert request.headers["Authorization"] == "Bearer access-token"
         return httpx.Response(
             status_code=200,
-                json={
-                    "id": "spotify-track-1",
-                    "name": "Spotify Track",
-                    "artists": [{"name": "Spotify Artist"}],
-                    "duration_ms": 180000,
-                    "explicit": False,
-                    "popularity": 70,
-                    "preview_url": "https://p.scdn.co/mp3-preview/track",
-                    "is_playable": True,
-                    "external_urls": {
-                        "spotify": "https://open.spotify.com/track/spotify-track-1"
-                    },
-                    "album": {
-                        "name": "Spotify Album",
-                        "images": [
-                            {"url": "https://i.scdn.co/image/artwork", "width": 640}
-                        ]
+            json={
+                "id": "spotify-track-1",
+                "name": "Spotify Track",
+                "artists": [{"name": "Spotify Artist"}],
+                "duration_ms": 180000,
+                "explicit": False,
+                "popularity": 70,
+                "external_ids": {"isrc": "GBDUW0000053"},
+                "preview_url": "https://p.scdn.co/mp3-preview/track",
+                "is_playable": True,
+                "external_urls": {
+                    "spotify": "https://open.spotify.com/track/spotify-track-1"
+                },
+                "album": {
+                    "name": "Spotify Album",
+                    "images": [
+                        {"url": "https://i.scdn.co/image/artwork", "width": 640}
+                    ],
                 },
             },
         )
@@ -345,6 +346,7 @@ async def test_get_track_playback_maps_spotify_response(monkeypatch) -> None:
     assert playback.artist_name == "Spotify Artist"
     assert playback.album_name == "Spotify Album"
     assert playback.duration_ms == 180000
+    assert playback.isrc == "GBDUW0000053"
     assert playback.metadata == {"explicit": False, "popularity": 70}
     assert playback.playback_id == "spotify-track-1"
     assert playback.preview_url == "https://p.scdn.co/mp3-preview/track"

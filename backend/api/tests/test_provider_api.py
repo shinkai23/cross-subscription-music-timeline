@@ -799,6 +799,7 @@ def test_get_track_playback(client: TestClient, db_session: Session) -> None:
         "artist_name": "Test Artist",
         "album_name": "Test Album",
         "duration_ms": 180000,
+        "isrc": None,
         "metadata": {"source": "fake"},
         "playback_id": "track-1",
         "preview_url": "https://p.scdn.co/mp3-preview/track",

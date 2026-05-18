@@ -184,6 +184,7 @@ class SpotifyAdapter(MusicProviderAdapter):
                 "explicit": data.get("explicit"),
                 "popularity": data.get("popularity"),
             },
+            isrc=data.get("external_ids", {}).get("isrc"),
             playback_id=data["id"],
             preview_url=data.get("preview_url"),
             artwork_url=images[0]["url"] if images else None,

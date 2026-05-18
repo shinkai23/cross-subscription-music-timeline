@@ -12,6 +12,7 @@ from app.providers.base import (
     ProviderPlaylist,
     ProviderTrack,
 )
+from app.repositories.provider_track_repository import ProviderTrackRepository
 from app.repositories.service_account_repository import ServiceAccountRepository
 from app.repositories.track_repository import TrackRepository
 from app.schemas.provider_schema import AddTracksToPlaylistRequest
@@ -34,6 +35,7 @@ def get_provider_service(
 ) -> ProviderService:
     return ProviderService(
         track_repository=TrackRepository(db),
+        provider_track_repository=ProviderTrackRepository(db),
     )
 
 

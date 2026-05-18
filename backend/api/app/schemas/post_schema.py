@@ -4,9 +4,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class PostCreate(BaseModel):
-    item_type: str
-    source_provider: str
-    source_item_id: str
+    provider: str
+    provider_track_id: str
     caption: str | None = None
     visibility: str = "public"
 
@@ -28,9 +27,9 @@ class PostPlaybackRead(BaseModel):
 class PostRead(BaseModel):
     id: str
     user_id: str
+    track_id: str
+    source_provider_track_id: str
     item_type: str
-    source_provider: str
-    source_item_id: str
     caption: str | None
     visibility: str
     created_at: datetime

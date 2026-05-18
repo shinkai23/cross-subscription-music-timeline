@@ -9,6 +9,50 @@ from app.providers.base import (
 from app.services.provider_service import ProviderService
 
 
+class FakeTrack:
+    id = "canonical-track-1"
+
+
+class FakeProviderTrack:
+    track_id = "existing-canonical-track-1"
+
+
+class FakeTrackRepository:
+    def __init__(self) -> None:
+        self.playback: ProviderPlaybackMetadata | None = None
+
+    def get_or_create_from_playback(
+        self,
+        playback: ProviderPlaybackMetadata,
+    ) -> FakeTrack:
+        self.playback = playback
+        return FakeTrack()
+
+
+class FakeProviderTrackRepository:
+    def __init__(self) -> None:
+        self.track_id: str | None = None
+        self.playback: ProviderPlaybackMetadata | None = None
+        self.existing_provider_track = None
+
+    def get_by_provider_track_id(
+        self,
+        provider: str,
+        provider_track_id: str,
+    ):
+        assert provider == "fake"
+        assert provider_track_id == "track-1"
+        return self.existing_provider_track
+
+    def upsert_playback_metadata(
+        self,
+        track_id: str,
+        playback: ProviderPlaybackMetadata,
+    ) -> None:
+        self.track_id = track_id
+        self.playback = playback
+
+
 class FakeAdapter:
     provider = "fake"
 
@@ -175,3 +219,56 @@ async def test_get_track_playback_calls_provider_adapter(monkeypatch) -> None:
     assert playback.provider == "fake"
     assert playback.provider_track_id == "track-1"
     assert playback.preview_url == "https://example.com/preview.mp3"
+
+
+@pytest.mark.anyio
+async def test_get_track_playback_persists_canonical_and_provider_track(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.services.provider_service.get_provider_adapter",
+        lambda provider: FakeAdapter(),
+    )
+    track_repository = FakeTrackRepository()
+    provider_track_repository = FakeProviderTrackRepository()
+    service = ProviderService(
+        track_repository=track_repository,
+        provider_track_repository=provider_track_repository,
+    )
+
+    playback = await service.get_track_playback(
+        provider="fake",
+        track_id="track-1",
+        user_token="user-token",
+    )
+
+    assert track_repository.playback == playback
+    assert provider_track_repository.track_id == "canonical-track-1"
+    assert provider_track_repository.playback == playback
+
+
+@pytest.mark.anyio
+async def test_get_track_playback_reuses_existing_provider_track(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.services.provider_service.get_provider_adapter",
+        lambda provider: FakeAdapter(),
+    )
+    track_repository = FakeTrackRepository()
+    provider_track_repository = FakeProviderTrackRepository()
+    provider_track_repository.existing_provider_track = FakeProviderTrack()
+    service = ProviderService(
+        track_repository=track_repository,
+        provider_track_repository=provider_track_repository,
+    )
+
+    playback = await service.get_track_playback(
+        provider="fake",
+        track_id="track-1",
+        user_token="user-token",
+    )
+
+    assert track_repository.playback is None
+    assert provider_track_repository.track_id == "existing-canonical-track-1"
+    assert provider_track_repository.playback == playback
