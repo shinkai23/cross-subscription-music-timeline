@@ -806,4 +806,6 @@ def test_get_track_playback(client: TestClient, db_session: Session) -> None:
         "artwork_url": "https://i.scdn.co/image/artwork",
         "provider_url": "https://open.spotify.com/track/track-1",
         "is_playable": True,
+        "track_id": None,
+        "provider_track_row_id": None,
     }

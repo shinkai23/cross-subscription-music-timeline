@@ -8,14 +8,13 @@ from app.dependencies.db import get_db
 from app.models.user import User
 from app.providers.base import (
     CreatePlaylistInput,
-    ProviderPlaybackMetadata,
     ProviderPlaylist,
     ProviderTrack,
 )
 from app.repositories.provider_track_repository import ProviderTrackRepository
 from app.repositories.service_account_repository import ServiceAccountRepository
 from app.repositories.track_repository import TrackRepository
-from app.schemas.provider_schema import AddTracksToPlaylistRequest
+from app.schemas.provider_schema import AddTracksToPlaylistRequest, ProviderPlaybackRead
 from app.services.provider_service import ProviderService
 from app.services.service_account_errors import ServiceAccountNotConnectedError
 from app.services.service_account_service import ServiceAccountService
@@ -129,13 +128,13 @@ async def add_track_to_playlist(
 
 @router.get(
     "/{provider}/tracks/{track_id}/playback",
-    response_model=ProviderPlaybackMetadata,
+    response_model=ProviderPlaybackRead,
 )
 async def get_track_playback(
     track_id: str,
     auth_context: AuthContext = Depends(get_auth_context),
     service: ProviderService = Depends(get_provider_service),
-) -> ProviderPlaybackMetadata:
+) -> ProviderPlaybackRead:
     return await service.get_track_playback(
         provider=auth_context.provider,
         track_id=track_id,

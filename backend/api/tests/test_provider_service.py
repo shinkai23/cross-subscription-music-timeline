@@ -14,6 +14,7 @@ class FakeTrack:
 
 
 class FakeProviderTrack:
+    id = "existing-provider-track-row-1"
     track_id = "existing-canonical-track-1"
 
 
@@ -48,9 +49,12 @@ class FakeProviderTrackRepository:
         self,
         track_id: str,
         playback: ProviderPlaybackMetadata,
-    ) -> None:
+    ) -> FakeProviderTrack:
         self.track_id = track_id
         self.playback = playback
+        saved_provider_track = FakeProviderTrack()
+        saved_provider_track.id = "provider-track-row-1"
+        return saved_provider_track
 
 
 class FakeAdapter:
@@ -219,6 +223,8 @@ async def test_get_track_playback_calls_provider_adapter(monkeypatch) -> None:
     assert playback.provider == "fake"
     assert playback.provider_track_id == "track-1"
     assert playback.preview_url == "https://example.com/preview.mp3"
+    assert playback.track_id is None
+    assert playback.provider_track_row_id is None
 
 
 @pytest.mark.anyio
@@ -242,9 +248,17 @@ async def test_get_track_playback_persists_canonical_and_provider_track(
         user_token="user-token",
     )
 
-    assert track_repository.playback == playback
+    assert track_repository.playback is not None
+    assert track_repository.playback.provider == playback.provider
+    assert track_repository.playback.provider_track_id == playback.provider_track_id
     assert provider_track_repository.track_id == "canonical-track-1"
-    assert provider_track_repository.playback == playback
+    assert provider_track_repository.playback is not None
+    assert provider_track_repository.playback.provider == playback.provider
+    assert provider_track_repository.playback.provider_track_id == (
+        playback.provider_track_id
+    )
+    assert playback.track_id == "canonical-track-1"
+    assert playback.provider_track_row_id == "provider-track-row-1"
 
 
 @pytest.mark.anyio
@@ -271,4 +285,10 @@ async def test_get_track_playback_reuses_existing_provider_track(
 
     assert track_repository.playback is None
     assert provider_track_repository.track_id == "existing-canonical-track-1"
-    assert provider_track_repository.playback == playback
+    assert provider_track_repository.playback is not None
+    assert provider_track_repository.playback.provider == playback.provider
+    assert provider_track_repository.playback.provider_track_id == (
+        playback.provider_track_id
+    )
+    assert playback.track_id == "existing-canonical-track-1"
+    assert playback.provider_track_row_id == "provider-track-row-1"

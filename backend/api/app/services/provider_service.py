@@ -1,12 +1,12 @@
 from app.providers.base import (
     CreatePlaylistInput,
-    ProviderPlaybackMetadata,
     ProviderPlaylist,
     ProviderTrack,
 )
 from app.providers.registry import get_provider_adapter
 from app.repositories.provider_track_repository import ProviderTrackRepository
 from app.repositories.track_repository import TrackRepository
+from app.schemas.provider_schema import ProviderPlaybackRead
 
 
 class ProviderService:
@@ -73,7 +73,7 @@ class ProviderService:
         provider: str,
         track_id: str,
         user_token: str,
-    ) -> ProviderPlaybackMetadata:
+    ) -> ProviderPlaybackRead:
         adapter = get_provider_adapter(provider)
         playback = await adapter.get_track_playback(
             track_id=track_id,
@@ -84,7 +84,9 @@ class ProviderService:
             self.track_repository is None
             or self.provider_track_repository is None
         ):
-            return playback
+            return ProviderPlaybackRead(
+                **playback.model_dump(),
+            )
 
         existing_provider_track = (
             self.provider_track_repository.get_by_provider_track_id(
@@ -94,16 +96,26 @@ class ProviderService:
         )
 
         if existing_provider_track is not None:
-            self.provider_track_repository.upsert_playback_metadata(
-                track_id=existing_provider_track.track_id,
-                playback=playback,
+            saved_provider_track = (
+                self.provider_track_repository.upsert_playback_metadata(
+                    track_id=existing_provider_track.track_id,
+                    playback=playback,
+                )
             )
-            return playback
+            return ProviderPlaybackRead(
+                **playback.model_dump(),
+                track_id=existing_provider_track.track_id,
+                provider_track_row_id=saved_provider_track.id,
+            )
 
         track = self.track_repository.get_or_create_from_playback(playback)
-        self.provider_track_repository.upsert_playback_metadata(
+        saved_provider_track = self.provider_track_repository.upsert_playback_metadata(
             track_id=track.id,
             playback=playback,
         )
 
-        return playback
+        return ProviderPlaybackRead(
+            **playback.model_dump(),
+            track_id=track.id,
+            provider_track_row_id=saved_provider_track.id,
+        )
