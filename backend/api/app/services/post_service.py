@@ -4,7 +4,7 @@ from app.models.track import Track
 from app.models.user import User
 from app.repositories.post_repository import PostRepository
 from app.repositories.track_repository import TrackRepository
-from app.schemas.post_schema import PostCreate, PostPlaybackRead, PostRead
+from app.schemas.post_schema import PostCreate, PostListRead, PostPlaybackRead, PostRead
 
 
 class PostService:
@@ -20,7 +20,7 @@ class PostService:
         self,
         limit: int = 50,
         before: datetime | None = None,
-    ) -> list[PostRead]:
+    ) -> PostListRead:
         posts = self.repository.list_posts(limit=limit, before=before)
         track_keys = [
             (post.source_provider, post.source_item_id)
@@ -47,7 +47,10 @@ class PostService:
                 )
             )
 
-        return results
+        return PostListRead(
+            items=results,
+            next_before=results[-1].created_at if results else None,
+        )
 
     def create_post(self, post_in: PostCreate, current_user: User):
         return self.repository.create_post(post_in, user_id=current_user.id)

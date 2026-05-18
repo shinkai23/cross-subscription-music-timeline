@@ -36,10 +36,12 @@ def test_create_and_list_posts(client: TestClient, db_session: Session) -> None:
     list_response = client.get("/posts")
 
     assert list_response.status_code == 200
-    posts = list_response.json()
+    data = list_response.json()
+    posts = data["items"]
     assert len(posts) == 1
     assert posts[0]["id"] == created_post["id"]
     assert posts[0]["playback"] is None
+    assert data["next_before"] == posts[0]["created_at"]
 
 
 def test_list_posts_includes_playback_when_track_exists(
@@ -81,7 +83,8 @@ def test_list_posts_includes_playback_when_track_exists(
     list_response = client.get("/posts")
 
     assert list_response.status_code == 200
-    posts = list_response.json()
+    data = list_response.json()
+    posts = data["items"]
     assert len(posts) == 1
     assert posts[0]["playback"] == {
         "provider": "spotify",
@@ -96,6 +99,7 @@ def test_list_posts_includes_playback_when_track_exists(
         "playback_id": "spotify-track-1",
         "is_playable": True,
     }
+    assert data["next_before"] == posts[0]["created_at"]
 
 
 def test_list_posts_filters_by_before_cursor(
@@ -128,10 +132,12 @@ def test_list_posts_filters_by_before_cursor(
     )
 
     assert response.status_code == 200
-    posts = response.json()
+    data = response.json()
+    posts = data["items"]
     assert len(posts) == 1
     assert posts[0]["id"] == older_post.id
     assert posts[0]["caption"] == "older post"
+    assert data["next_before"] == posts[0]["created_at"]
 
 
 def test_create_post_requires_authentication(client: TestClient) -> None:

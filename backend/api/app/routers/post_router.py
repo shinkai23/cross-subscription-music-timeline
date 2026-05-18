@@ -8,7 +8,7 @@ from app.dependencies.db import get_db
 from app.models.user import User
 from app.repositories.post_repository import PostRepository
 from app.repositories.track_repository import TrackRepository
-from app.schemas.post_schema import PostCreate, PostRead
+from app.schemas.post_schema import PostCreate, PostListRead, PostRead
 from app.services.post_service import PostService
 
 
@@ -22,7 +22,7 @@ def get_post_service(db: Session = Depends(get_db)) -> PostService:
     )
 
 
-@router.get("", response_model=list[PostRead])
+@router.get("", response_model=PostListRead)
 def list_posts(
     limit: int = Query(default=50, ge=1, le=100),
     before: datetime | None = Query(default=None),

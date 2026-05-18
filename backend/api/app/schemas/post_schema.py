@@ -37,3 +37,8 @@ class PostRead(BaseModel):
     playback: PostPlaybackRead | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PostListRead(BaseModel):
+    items: list[PostRead]
+    next_before: datetime | None = None
