@@ -39,6 +39,15 @@ posts
 
 この構造により、Spotifyユーザーが投稿した曲であっても、Apple Musicユーザーは同じ canonical track を起点に、自分の利用サービスに合った再生情報を取得できる。
 
+## ER図について
+
+このドキュメントでは、draw.ioで作成したER図をPNG画像として掲載する。
+
+ER図は2つに分けている。
+
+- コアドメインER図: クロスサブスクリプション投稿機能の中核となるテーブル関係
+- 周辺機能ER図: 通報、プレイリスト、マッチング基盤などの補助機能
+
 ## テーブル間の関係一覧
 
 | 親テーブル | 関係 | 子テーブル | 意味 |
@@ -52,31 +61,6 @@ posts
 | posts | 1 -> N | reports | 1つの投稿は複数回通報される可能性がある |
 | playlists | 1 -> N | playlist_items | 1つのプレイリストは複数の曲を含む |
 | tracks | 1 -> N | playlist_items | 1つの楽曲は複数プレイリスト項目から参照される |
-
-## ER図の読み方
-
-このドキュメントでは Mermaid のER図を使用する。
-
-```text
-USERS ||--o{ POSTS : creates
-```
-
-これは以下を意味する。
-
-```text
-users 1 -> N posts
-```
-
-つまり、1人のユーザーは0件以上の投稿を作成でき、1つの投稿は必ず1人のユーザーに属する。
-
-主な記号の意味は以下である。
-
-| 記号 | 意味 |
-|---|---|
-| `||` | 必ず1つ |
-| `o{` | 0個以上 |
-| `|{` | 1個以上 |
-| `o|` | 0または1 |
 
 ## コアドメインER図
 
@@ -92,7 +76,7 @@ users 1 -> N posts
 | users | 1 -> N | posts | 1人のユーザーは複数の投稿を作成できる |
 | tracks | 1 -> N | provider_tracks | 1つの楽曲は複数サービス上の楽曲情報を持てる |
 | tracks | 1 -> N | posts | 1つの楽曲は複数投稿から参照される |
-| provider_tracks | 1 -> N | posts | 1つのprovider trackは複数投稿の投稿元になれる |
+| provider_tracks | 1 -> N | posts | 1つのprovider trackは投稿元として使われる |
 
 ## コアドメインの説明
 
@@ -322,7 +306,6 @@ MVPでは `preview_url` を用いた試聴再生を優先する。
 | playlists | 1 -> N | playlist_items | 1つのプレイリストは複数項目を持つ |
 | tracks | 1 -> N | playlist_items | 1つの楽曲は複数プレイリスト項目から参照される |
 | tracks | 1 -> N | track_matches | 1つの楽曲は複数のマッチ候補に関わる |
-
 
 ## 周辺機能の説明
 
