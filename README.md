@@ -61,6 +61,14 @@ CloudWatch Logs
 
 このURLは検証用です。HTTPS、独自ドメイン、GitHub Actionsによる自動デプロイは今後対応します。
 
+運用メモ:
+
+- AWS無料クレジットを利用し、ポートフォリオ確認用の環境として維持しています。
+- AWS Budgets / Cost Explorer で月額コストを監視します。
+- CloudWatch Logs は `/ecs/music-timeline-api` に出力し、保持期間を 7 日に設定しています。
+- 不要な ECR image や Security Group rule は定期的に整理します。
+- 課金を抑えたい場合は、ECS service の desired count を 0 にしてAPIを停止できます。
+
 ## 設計上の見どころ
 
 - `tracks` と `provider_tracks` を分離し、同一楽曲をサービス横断で扱う
