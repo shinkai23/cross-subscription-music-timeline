@@ -248,7 +248,7 @@ struct Copybook {
     var loadDemoDescription: String { text(en: "Load demo posts to preview a jacket-first timeline.", ja: "ジャケット中心のタイムラインをデモ投稿で確認できます。") }
     var loadDemoTimeline: String { text(en: "Load Demo Timeline", ja: "デモタイムラインを読み込む") }
     var discover: String { text(en: "DISCOVER", ja: "見つける") }
-    var discoverDescription: String { text(en: "Search tags, posters, artists, tracks, albums, and playlists.", ja: "タグ、投稿者、アーティスト、曲、アルバム、プレイリストを検索できます。") }
+    var discoverDescription: String { text(en: "Search tags, posters, artists, and tracks.", ja: "タグ、投稿者、アーティスト、曲を検索できます。") }
     var searchPlaceholder: String { text(en: "Search tags, poster, artist, title...", ja: "タグ、投稿者、アーティスト、タイトルを検索") }
     var noMatches: String { text(en: "No matching posts.", ja: "一致する投稿がありません。") }
     var noMatchesDescription: String { text(en: "Try another tag, poster name, artist, or switch tabs.", ja: "別のタグ、投稿者名、アーティスト名を試すか、タブを切り替えてください。") }
@@ -296,7 +296,7 @@ struct Copybook {
     var previewCardTitle: String { text(en: "Live cover preview", ja: "カバープレビュー") }
     var quickTagsTitle: String { text(en: "Quick tags", ja: "おすすめタグ") }
     var sourceLibraryTitle: String { text(en: "Pick from your library", ja: "ライブラリから選択") }
-    var sourceLibrarySubtitle: String { text(en: "Choose a real track, album, or playlist from the selected subscription and build the post around it.", ja: "選んだサブスク内の実在する曲、アルバム、プレイリストを起点に投稿を組み立てます。") }
+    var sourceLibrarySubtitle: String { text(en: "Choose a real track from the selected subscription and build the post around it.", ja: "選んだサブスク内の実在する曲を起点に投稿を組み立てます。") }
     var hookTitle: String { text(en: "Why people will share this", ja: "広がる理由") }
     var hookPlaceholder: String { text(en: "What is the angle, scene, or feeling people will instantly get?", ja: "どんな場面や感情が一瞬で伝わるか") }
     var postMomentsTitle: String { text(en: "Moments to anchor it", ja: "結びつける瞬間") }

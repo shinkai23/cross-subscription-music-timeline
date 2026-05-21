@@ -1,8 +1,8 @@
 # Cross-Subscription Music Timeline
 
-Apple Music と Spotify の間にある「共有しにくさ」を減らすための、iOS 重視の音楽投稿・プレイリスト再現アプリです。
+Apple Music と Spotify の間にある「共有しにくさ」を減らすための、iOS 重視の音楽投稿・試聴タイムラインアプリです。
 
-ユーザーは好きな曲、アルバム、自作プレイリストを紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲でプレイリストを再現したりできます。
+ユーザーは好きな曲を紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲で試聴したりできます。
 
 ## 概要
 
@@ -24,6 +24,43 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 - Secrets: AWS Secrets Manager
 - CI: GitHub Actions, Python, pytest, ruff
 
+## デプロイ状況
+
+検証用のBackend APIを AWS ECS Fargate にデプロイ済みです。
+
+```text
+http://music-timeline-api-alb-904044250.us-east-1.elb.amazonaws.com
+```
+
+確認済み:
+
+```bash
+curl http://music-timeline-api-alb-904044250.us-east-1.elb.amazonaws.com/health
+curl http://music-timeline-api-alb-904044250.us-east-1.elb.amazonaws.com/posts
+```
+
+期待値:
+
+```json
+{"status":"ok"}
+{"items":[],"next_before":null}
+```
+
+AWS構成:
+
+```text
+Application Load Balancer
+  -> ECS Fargate
+  -> FastAPI container
+  -> Amazon RDS PostgreSQL
+
+Amazon ECR
+AWS Secrets Manager
+CloudWatch Logs
+```
+
+このURLは検証用です。HTTPS、独自ドメイン、GitHub Actionsによる自動デプロイは今後対応します。
+
 ## 設計上の見どころ
 
 - `tracks` と `provider_tracks` を分離し、同一楽曲をサービス横断で扱う
@@ -36,14 +73,14 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 
 ## プロダクトの核
 
-このアプリの価値は、単なる音楽 SNS ではなく、**サービスをまたいだ音楽共有・プレイリスト再現**にあります。
+このアプリの価値は、単なる音楽 SNS ではなく、**サービスをまたいだ音楽共有・試聴体験**にあります。
 
 例:
 
-- Spotify ユーザーが楽曲や自作プレイリストを投稿する。
+- Spotify ユーザーが楽曲を投稿する。
 - Apple Music ユーザーがその投稿を見る。
-- API が ISRC や曲名・アーティスト名を使って Apple Music 上の同じ曲を探す。
-- Apple Music ユーザーは自分のサービス上で曲を開いたり、プレイリストを再現したりできる。
+- API が ISRC や曲名・アーティスト名を使って、サービス横断で同じ曲として扱えるようにする。
+- Apple Music ユーザーは自分のサービス上で曲を開いたり、タイムライン上で試聴したりできる。
 
 ## 投稿と再生情報の流れ
 
@@ -104,14 +141,10 @@ posts.source_provider_track_id
 ```text
 apps/ios/              SwiftUI + MusicKit prototype
 backend/api/           FastAPI + SQLAlchemy + Alembic API
-backend/api_legacy/    旧 Fastify backend の退避先
-docs/                  product, architecture, legal, provider design
-infra/                 AWS ECS Fargate / RDS deployment notes
+docs/                  requirements, database design, API spec
 .github/workflows/     CI
 docker-compose.yml     local PostgreSQL definition
 ```
-
-既存の iOS SwiftUI prototype、法務・Provider リスク文書、Provider integration design は残しています。
 
 ## ローカル開発
 
@@ -163,19 +196,17 @@ DBを使うテストはSQLiteのin-memory databaseを使います。
 ## ドキュメント
 
 - [要件定義](docs/product-requirements.md)
-- [ドメインモデル設計](docs/domain-model.md)
-- [法務・外部 API リスク](docs/legal-and-platform-risk.md)
-- [アーキテクチャ](docs/architecture.md)
-- [Provider 連携設計](docs/provider-integration.md)
-- [ローカル開発手順](docs/local-development.md)
-- [AWS アーキテクチャ](infra/aws-architecture.md)
-- [デプロイ手順](infra/deployment.md)
-- [ロードマップ](docs/roadmap.md)
+- [DB設計書](docs/database-design.md)
+- [API仕様書](docs/api-spec.md)
+- [AWS手動デプロイ手順](docs/aws-deployment.md)
 
 ## 現在の状態
 
 - iOS は SwiftUI prototype を保持。
 - Backend は FastAPI + SQLAlchemy + Alembic + PostgreSQL 構成へ移行済み。
+- Backend は AWS ECS Fargate に手動デプロイ済み。
+- ALB 経由で `/health` と `/posts` の動作を確認済み。
+- RDS PostgreSQL に対して Alembic migration を適用済み。
 - JWT認証、ユーザー作成、投稿API、Provider adapter、Spotify OAuth、Apple Music連携基盤を実装。
 - `tracks` / `provider_tracks` / `posts` による canonical track model を導入。
 - タイムライン投稿に provider playback metadata を含める基盤を実装。
