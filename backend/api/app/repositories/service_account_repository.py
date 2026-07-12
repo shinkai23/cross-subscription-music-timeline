@@ -50,3 +50,14 @@ class ServiceAccountRepository:
             ServiceAccount.disconnected_at.is_(None),
         )
         return self.db.scalar(statement)
+
+    def list_connected_by_user_id(self, user_id: str) -> list[ServiceAccount]:
+        statement = (
+            select(ServiceAccount)
+            .where(
+                ServiceAccount.user_id == user_id,
+                ServiceAccount.disconnected_at.is_(None),
+            )
+            .order_by(ServiceAccount.provider)
+        )
+        return list(self.db.scalars(statement).all())

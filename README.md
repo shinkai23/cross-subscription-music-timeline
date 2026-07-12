@@ -134,7 +134,7 @@ SimulatorではAPI base URLは `http://localhost:4000` を使います。実機�
 - JWTはUserDefaults保存であり、Keychain保存は今後対応する。
 - Spotify OAuth callbackは手動入力方式。
 - `ASWebAuthenticationSession` とカスタムURLスキーム callback は未対応。
-- Provider接続状態は一部UserDefaults管理であり、本番ではprovider接続状態取得APIが必要。
+- Provider接続状態は `GET /me/provider-accounts` で取得する。検索・投稿retry補助のため、一部UserDefaults同期は残している。
 - Apple MusicのMusicKit再生は未対応。
 - Apple Developer Tokenは未使用。
 - Apple Musicは現時点では外部遷移中心。

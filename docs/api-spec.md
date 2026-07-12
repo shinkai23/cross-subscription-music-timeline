@@ -100,6 +100,43 @@ Error:
 
 - `401`: JWTが無効
 
+### GET /me/provider-accounts
+
+現在ユーザーに接続済みのprovider account一覧を取得する。
+
+Headers:
+
+```http
+Authorization: Bearer <JWT>
+```
+
+Response `200`:
+
+```json
+{
+  "items": [
+    {
+      "provider": "spotify",
+      "provider_user_id": "spotify-user-1",
+      "connected": true,
+      "created_at": "2026-05-20T00:00:00"
+    }
+  ]
+}
+```
+
+未接続の場合:
+
+```json
+{
+  "items": []
+}
+```
+
+Error:
+
+- `401`: JWTが無効
+
 ## Auth
 
 ### POST /auth/dev-login

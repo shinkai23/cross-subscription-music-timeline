@@ -23,6 +23,28 @@ struct UserDTO: Decodable, Identifiable {
 
 typealias CurrentUserDTO = UserDTO
 
+struct ProviderAccountsResponseDTO: Decodable {
+    let items: [ProviderAccountDTO]
+}
+
+struct ProviderAccountDTO: Decodable, Identifiable {
+    var id: String {
+        provider
+    }
+
+    let provider: String
+    let providerUserId: String
+    let connected: Bool
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case provider
+        case providerUserId = "provider_user_id"
+        case connected
+        case createdAt = "created_at"
+    }
+}
+
 struct CreateUserDTO: Encodable {
     let displayName: String
     let handle: String

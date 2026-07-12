@@ -45,6 +45,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らす。
 - `/me` 検証
 - logout
 - Spotify接続MVP
+- Provider接続状態取得API
 - SafariでSpotify認可URLを開く
 - callback URLまたは `code` / `state` の手動入力
 - `POST /auth/spotify/connect`
@@ -143,7 +144,6 @@ MVPでは以下を対象外とする。
 - OAuthログインによるアプリ認証
 - KeychainによるJWT保存
 - ASWebAuthenticationSessionによるSpotify callback自動処理
-- Provider接続状態取得API
 - Apple Music MusicKit再生
 - Apple Developer Tokenを使うApple Music API運用
 - Apple Musicアカウント連携UI
