@@ -67,6 +67,15 @@ README用の画像は `docs/images/` に配置する。
 - [ ] `docs/images/track-search.png`
 - [ ] `docs/images/create-post.png`
 - [ ] `docs/images/provider-required.png`
+- [ ] README上で6枚すべてが表示される。
+- [ ] placeholder画像が残っている場合は、README本文でplaceholderであることを明記する。
+- [ ] 公開して困るhandle、caption、検索キーワード、token、callback codeが写っていない。
+
+## GitHub整理
+
+- [ ] MVPで完了した作業をREADMEまたはPR一覧から追える。
+- [ ] 次に作る項目をRoadmapまたはIssueで確認できる。
+- [ ] `/auth/dev-login`、ASWebAuthenticationSession、Apple Music MusicKit、Provider disconnectなどの残課題が明記されている。
 
 ## 検証コマンド
 
