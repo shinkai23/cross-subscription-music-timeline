@@ -2,7 +2,17 @@
 
 Apple Music と Spotify の間にある「共有しにくさ」を減らすための、iOS 重視の音楽投稿・試聴タイムラインアプリです。
 
-ユーザーは好きな曲を紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲で試聴したりできます。
+ユーザーは好きな曲を紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲で試聴したりできます。現在のMVPでは、iOSアプリから認証、Spotify接続、曲検索、投稿作成、Timeline表示、preview再生、provider外部遷移までを確認できます。
+
+## MVP Snapshot
+
+- Apple Music / Spotify間で曲を共有しにくい課題に対し、providerをまたいだ音楽投稿Timelineを作る。
+- `tracks` と `provider_tracks` を分離したcanonical track modelで、同一楽曲とprovider別メタデータを分けて扱う。
+- iOSはSwiftUIで、BackendはFastAPI + PostgreSQL + SQLAlchemy + Alembicで構成する。
+- BackendはDocker化し、AWS ECS Fargate / RDS PostgreSQL / Secrets Managerを前提に運用できる。
+- Apple Developer Program未登録でも動くMVPとして、Apple MusicはMusicKit再生ではなく `provider_url` による外部遷移を中心にする。
+- Spotifyは `preview_url` が存在する場合だけAVPlayerで30秒試聴できる。
+- 音源ファイルは保存・再配布せず、Spotify / Apple Musicをスクレイピングしない。
 
 ## 概要
 
@@ -31,7 +41,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 実装済み:
 
 - iOS SwiftUIアプリからBackend `GET /posts` を呼び出し、Timelineを表示する。
-- 投稿カードに artwork / title / artist / album / caption / provider を表示する。
+- 投稿カードにartwork、title、artist、album、caption、providerを表示する。
 - Spotify `preview_url` がある場合のみ、AVPlayerで30秒試聴できる。
 - `provider_url` からSpotify / Apple MusicのアプリまたはWebへ外部遷移できる。
 - 曲検索、playback metadata取得、caption付き投稿作成、投稿成功後のTimeline再取得ができる。
@@ -39,6 +49,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 - Account画面からSpotify接続MVPを実行できる。
 - Spotify認可URLをSafariで開き、callback URLまたは `code` / `state` を手動入力して `POST /auth/spotify/connect` できる。
 - Account画面にSpotify接続状態を表示する。
+- Spotify未接続時は、検索・投稿画面から接続案内へ誘導する。
 
 現在の方針:
 
@@ -46,61 +57,36 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 - Apple MusicはMusicKit再生をまだ使わず、`provider_url` による外部遷移を基本にする。
 - Apple Developer Tokenはまだ扱わない。
 
+## Screenshots
+
+画像は `docs/images/` に配置します。実スクリーンショットがまだない場合でもREADMEが崩れないよう、同名のプレースホルダーPNGを置いています。実機またはSimulatorで撮影した画像に差し替えると、このセクションにそのまま反映されます。
+
+| Auth / Handle login | Timeline |
+| --- | --- |
+| ![Auth / Handle login](docs/images/auth.png) | ![Timeline](docs/images/timeline.png) |
+
+| Spotify connection | Track search |
+| --- | --- |
+| ![Spotify connection](docs/images/spotify-connect.png) | ![Track search](docs/images/track-search.png) |
+
+| Create post | Provider connection required |
+| --- | --- |
+| ![Create post](docs/images/create-post.png) | ![Provider connection required](docs/images/provider-required.png) |
+
 ## iOS MVP Demo Flow
 
 1. Backendを起動する。
 2. iOSアプリを起動する。
-3. 未認証の場合はユーザーを作成する。作成後、同じhandleでdev loginを自動実行する。
-4. 自動ログインできない場合は、handleでdev loginする。
+3. 未認証の場合はユーザーを作成する。
+4. handleでdev loginする。
 5. Account画面でSpotify接続を開始する。
 6. Spotify認可URLをSafariで開く。
 7. 認可後のcallback URL、または `code` / `state` をアプリに手動入力する。
-8. 下部Composeボタン、またはTimelineの `+` から曲検索を開く。
-9. Spotifyで曲を検索し、曲を選択する。
-10. playback metadataを取得し、caption付きで投稿する。
-11. 投稿成功後、Timelineに投稿が表示される。
-12. `preview_url` がある投稿は試聴できる。
-13. `provider_url` からSpotifyを開ける。
-
-## Screenshots
-
-画像は `docs/images/` に配置します。現在はプレースホルダーPNGを置いているため、実機またはSimulatorで撮影した同名ファイルに差し替えるとREADME上にそのまま反映されます。
-
-### Auth / Handle login
-
-ユーザー作成後、handleで開発用ログインする画面。
-
-![Auth / Handle login](docs/images/auth.png)
-
-### Timeline
-
-投稿カード、provider、caption、preview、外部遷移ボタンを確認する画面。
-
-![Timeline](docs/images/timeline.png)
-
-### Spotify connection
-
-Account画面からSpotify接続状態を確認し、接続MVPを開始する画面。
-
-![Spotify connection](docs/images/spotify-connect.png)
-
-### Track search
-
-Spotifyで曲名・アーティスト名を検索し、投稿対象の曲を選ぶ画面。
-
-![Track search](docs/images/track-search.png)
-
-### Create post
-
-選択した曲にcaptionを付けて投稿する画面。
-
-![Create post](docs/images/create-post.png)
-
-### Provider connection required
-
-Spotify未接続時に、曲検索や投稿前に接続を促す画面。
-
-![Provider connection required](docs/images/provider-required.png)
+8. 曲検索画面でSpotifyの曲を検索する。
+9. 曲を選択し、caption付きで投稿する。
+10. 投稿成功後、Timelineに投稿が表示される。
+11. `preview_url` がある投稿は試聴できる。
+12. `provider_url` からSpotifyまたはApple Musicを開ける。
 
 ## Local Backend Startup
 

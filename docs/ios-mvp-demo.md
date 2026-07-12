@@ -43,9 +43,17 @@ xcodebuild -project apps/ios/MusicTimelineApp.xcodeproj \
 14. `preview_url` がある投稿はAVPlayerで試聴する。
 15. `provider_url` からSpotifyを開く。
 
-## スクリーンショット撮影対象
+## スクリーンショット撮影手順
 
-README掲載用の画像は `docs/images/` に配置する。現在はプレースホルダーPNGを置いているため、撮影後に同名ファイルで差し替える。
+README掲載用の画像は `docs/images/` に配置する。現在はREADMEが崩れないように同名のプレースホルダーPNGを置いている。撮影後、同じファイル名で差し替える。
+
+撮影時の推奨:
+
+- iOS Simulatorの端末サイズを統一する。
+- ステータスバーや時刻の見え方が画面ごとに大きく変わらないようにする。
+- Demo用のhandle、caption、検索キーワードは見られても問題ない内容にする。
+- Spotify未接続状態と接続済み状態を分けて撮影する。
+- 実画像に差し替えたあと、README上で画像が横並びでも読みやすいか確認する。
 
 | ファイル | 撮影対象 | 確認したい内容 |
 | --- | --- | --- |
@@ -55,8 +63,6 @@ README掲載用の画像は `docs/images/` に配置する。現在はプレー�
 | `docs/images/track-search.png` | Track search | provider選択、検索入力、検索結果一覧 |
 | `docs/images/create-post.png` | Create post | 曲情報表示、caption入力、投稿ボタン |
 | `docs/images/provider-required.png` | Provider connection required | Spotify未接続時の接続案内 |
-
-撮影時はiOS Simulatorの同じ端末サイズに揃えると、README上で比較しやすい。
 
 ## 制約
 
