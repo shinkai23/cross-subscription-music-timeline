@@ -54,6 +54,26 @@ xcodebuild -project apps/ios/MusicTimelineApp.xcodeproj \
 - `apps/ios/MusicTimelineApp/Support/AppEnvironment.swift` の `physicalDeviceAPIBaseURL`
 - Xcode Schemeの環境変数 `API_BASE_URL`
 
+## Spotify OAuth callback
+
+現在のiOS MVPでは、Spotify認可後のcallback URLをSafariのアドレスバーからコピーし、アプリへ貼り付ける。
+
+Backendの既定redirect URI:
+
+```text
+http://localhost:4000/auth/spotify/callback
+```
+
+Spotify Developer Dashboardには、Backendの `SPOTIFY_REDIRECT_URI` と同じ値を登録する。
+
+将来 `ASWebAuthenticationSession` で自動callback化する場合は、以下のようなカスタムURLスキームに切り替える必要がある。
+
+```text
+musictimeline://auth/spotify/callback
+```
+
+その場合は、Spotify Developer Dashboard、Backendの `SPOTIFY_REDIRECT_URI`、iOSのURL scheme登録を同じ値に揃える。
+
 ### xcodebuild troubleshooting
 
 このリポジトリでは、CLI確認には `-target MusicTimelineApp -sdk iphonesimulator` を使う。ローカルXcode環境によっては、`-scheme MusicTimelineApp -destination 'generic/platform=iOS Simulator'` が以下のようなdestination解決エラーになる場合がある。

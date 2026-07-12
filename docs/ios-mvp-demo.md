@@ -33,15 +33,21 @@ xcodebuild -project apps/ios/MusicTimelineApp.xcodeproj \
 4. Account画面を開く。
 5. `Connect Spotify` を押す。
 6. Spotify認可URLをSafariで開く。
-7. 認可後のcallback URL、または `code` / `state` をアプリに手動入力する。
-8. `Connect Spotify` を押してBackendへ `POST /auth/spotify/connect` する。
-9. Account画面で `Spotify connected` を確認する。
-10. 下部Composeボタン、またはTimelineの `+` から曲検索を開く。
-11. Spotifyで曲を検索する。
-12. 曲を選択し、captionを入力して投稿する。
-13. 投稿成功後、Timelineに投稿が表示される。
-14. `preview_url` がある投稿はAVPlayerで試聴する。
-15. `provider_url` からSpotifyを開く。
+7. 認可後、Safariのアドレスバーからcallback URL全体をコピーする。
+8. アプリに戻り、callback URLを貼り付ける。アプリ側で `code` / `state` を自動抽出する。
+9. 必要に応じて `code` / `state` を手動修正する。
+10. `Connect Spotify` を押してBackendへ `POST /auth/spotify/connect` する。
+11. Account画面で `Spotify connected` を確認する。
+12. 下部Composeボタン、またはTimelineの `+` から曲検索を開く。
+13. Spotifyで曲を検索する。
+14. 曲を選択し、captionを入力して投稿する。
+15. 投稿成功後、Timelineに投稿が表示される。
+16. `preview_url` がある投稿はAVPlayerで試聴する。
+17. `provider_url` からSpotifyを開く。
+
+現在のMVPでは、Backendのredirect URIは通常 `http://localhost:4000/auth/spotify/callback` を使う。callback後のページが空またはlocalhost表示でも、Safariのアドレスバーには `code` と `state` が含まれる。
+
+将来 `ASWebAuthenticationSession` で自動callback化する場合は、Spotify Developer DashboardとBackendの `SPOTIFY_REDIRECT_URI` を `musictimeline://auth/spotify/callback` のようなカスタムURLスキームに揃える必要がある。
 
 ## スクリーンショット撮影手順
 
@@ -68,7 +74,7 @@ README掲載用の画像は `docs/images/` に配置する。現在はREADMEが�
 
 - `/auth/dev-login` は開発用。
 - Spotify callbackは手動入力方式。
-- ASWebAuthenticationSessionは未対応。
+- `ASWebAuthenticationSession` は未対応。導入時はSpotify DashboardとBackend redirect URIの変更が必要。
 - JWTはUserDefaults保存。
 - Provider接続状態は一部UserDefaults管理。
 - Apple Musicは外部遷移中心。
