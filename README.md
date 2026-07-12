@@ -140,6 +140,31 @@ SimulatorではAPI base URLは `http://localhost:4000` を使います。実機�
 - Apple Musicは現時点では外部遷移中心。
 - Apple Music provider検索・playback APIはBackend設定やApple Developer Tokenがないと利用できない。
 
+## Roadmap
+
+Portfolio polish:
+
+- READMEのplaceholder画像を実機またはSimulatorのスクリーンショットに差し替える。
+- デモ用seed dataまたはデモ手順を整備し、第三者が同じ画面を再現しやすくする。
+- GitHub Issuesを、MVP済み、次に作るもの、技術的負債に分類する。
+
+Product:
+
+- Spotify OAuth callbackを `ASWebAuthenticationSession` とカスタムURLスキームで自動化する。
+- Provider接続状態のUIをSpotify以外にも拡張できる形に整理する。
+- 投稿の削除、編集、visibility変更など、最低限の投稿管理を追加する。
+
+Security / Production readiness:
+
+- `/auth/dev-login` を本番環境では無効化、または管理者・開発環境限定にする。
+- 本番用の認証方式、token refresh、HTTPS、独自ドメイン、自動デプロイを整備する。
+- Provider tokenの失効、再接続、disconnect APIを実装する。
+
+Apple Music:
+
+- Apple Developer Program登録後にDeveloper TokenとMusicKit再生を検討する。
+- それまではApple Musicは `provider_url` による外部遷移を基本とし、音源ファイルの保存・再配布は行わない。
+
 ## デプロイ状況
 
 検証用のBackend APIを AWS ECS Fargate にデプロイ済みです。

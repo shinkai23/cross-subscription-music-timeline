@@ -70,6 +70,18 @@ README掲載用の画像は `docs/images/` に配置する。現在はREADMEが�
 | `docs/images/create-post.png` | Create post | 曲情報表示、caption入力、投稿ボタン |
 | `docs/images/provider-required.png` | Provider connection required | Spotify未接続時の接続案内 |
 
+### 差し替え後の確認
+
+実スクリーンショットに差し替えた後は、以下を確認する。
+
+- README上で6枚すべてが表示される。
+- 画像の縦横比と端末サイズが揃っている。
+- handle、caption、検索キーワードに公開して困る情報が含まれていない。
+- Spotify接続画面では、接続済み状態または接続導線が分かる。
+- Track searchとCreate postは、曲名、アーティスト、アートワークが読める。
+- Provider connection requiredは、未接続時にAccount画面へ誘導できることが伝わる。
+- placeholder画像が残っている場合は、README本文でplaceholderであることを明記する。
+
 ## 制約
 
 - `/auth/dev-login` は開発用。
