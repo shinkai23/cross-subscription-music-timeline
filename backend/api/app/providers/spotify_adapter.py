@@ -55,6 +55,7 @@ class SpotifyAdapter(MusicProviderAdapter):
                 album_name=item["album"]["name"],
                 duration_ms=item["duration_ms"],
                 isrc=item.get("external_ids", {}).get("isrc"),
+                artwork_url=self._extract_album_artwork_url(item.get("album")),
                 provider_url=item.get("external_urls", {}).get("spotify"),
             )
             for item in data["tracks"]["items"]
@@ -86,6 +87,9 @@ class SpotifyAdapter(MusicProviderAdapter):
                 album_name=item["track"]["album"]["name"],
                 duration_ms=item["track"]["duration_ms"],
                 isrc=item["track"].get("external_ids", {}).get("isrc"),
+                artwork_url=self._extract_album_artwork_url(
+                    item["track"].get("album")
+                ),
                 provider_url=item["track"].get("external_urls", {}).get("spotify"),
             )
             for item in data["tracks"]["items"]
@@ -195,3 +199,13 @@ class SpotifyAdapter(MusicProviderAdapter):
     def build_open_url(self, item: Any) -> str:
         provider_id = self._extract_provider_id(item)
         return f"https://open.spotify.com/track/{provider_id}"
+
+    def _extract_album_artwork_url(self, album: dict[str, Any] | None) -> str | None:
+        if not album:
+            return None
+
+        images = album.get("images") or []
+        if not images:
+            return None
+
+        return images[0].get("url")

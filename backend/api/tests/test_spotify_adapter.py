@@ -39,7 +39,10 @@ async def test_search_tracks_maps_spotify_response(monkeypatch) -> None:
                             "id": "spotify-track-1",
                             "name": "One More Time",
                             "artists": [{"name": "Daft Punk"}],
-                            "album": {"name": "Discovery"},
+                            "album": {
+                                "name": "Discovery",
+                                "images": [{"url": "https://i.scdn.co/image/search"}],
+                            },
                             "duration_ms": 320000,
                             "external_ids": {"isrc": "GBDUW0000053"},
                             "external_urls": {
@@ -76,6 +79,7 @@ async def test_search_tracks_maps_spotify_response(monkeypatch) -> None:
     assert tracks[0].album_name == "Discovery"
     assert tracks[0].duration_ms == 320000
     assert tracks[0].isrc == "GBDUW0000053"
+    assert tracks[0].artwork_url == "https://i.scdn.co/image/search"
     assert tracks[0].provider_url == "https://open.spotify.com/track/1"
 
 
@@ -134,7 +138,12 @@ async def test_get_playlist_maps_spotify_response(monkeypatch) -> None:
                                 "id": "spotify-track-1",
                                 "name": "One More Time",
                                 "artists": [{"name": "Daft Punk"}],
-                                "album": {"name": "Discovery"},
+                                "album": {
+                                    "name": "Discovery",
+                                    "images": [
+                                        {"url": "https://i.scdn.co/image/playlist"}
+                                    ],
+                                },
                                 "duration_ms": 320000,
                                 "external_ids": {"isrc": "GBDUW0000053"},
                                 "external_urls": {
@@ -176,6 +185,7 @@ async def test_get_playlist_maps_spotify_response(monkeypatch) -> None:
     assert playlist.tracks[0].album_name == "Discovery"
     assert playlist.tracks[0].duration_ms == 320000
     assert playlist.tracks[0].isrc == "GBDUW0000053"
+    assert playlist.tracks[0].artwork_url == "https://i.scdn.co/image/playlist"
     assert playlist.tracks[0].provider_url == "https://open.spotify.com/track/1"
 
 

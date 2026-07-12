@@ -115,8 +115,85 @@ def test_list_posts_includes_playback_when_track_exists(
         "preview_url": "https://example.com/preview.mp3",
         "playback_id": "spotify-track-1",
         "is_playable": True,
+        "playback_mode": "preview",
     }
     assert data["next_before"] == posts[0]["created_at"]
+
+
+def test_list_posts_marks_apple_music_playback_as_external(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    track = Track(
+        title="Canonical Track",
+        artist_name="Canonical Artist",
+    )
+    provider_track = ProviderTrack(
+        track=track,
+        provider="apple_music",
+        provider_track_id="apple-track-1",
+        title="Apple Track",
+        artist_name="Apple Artist",
+        provider_url="https://music.apple.com/song/apple-track-1",
+        preview_url="https://audio-ssl.itunes.apple.com/preview",
+        playback_id="apple-track-1",
+        is_playable=True,
+    )
+    post = Post(
+        user=user,
+        track=track,
+        source_provider_track=provider_track,
+        item_type="track",
+        caption="apple external only",
+    )
+    db_session.add_all([user, track, provider_track, post])
+    db_session.commit()
+
+    response = client.get("/posts")
+
+    assert response.status_code == 200
+    playback = response.json()["items"][0]["playback"]
+    assert playback["provider"] == "apple_music"
+    assert playback["playback_mode"] == "external"
+
+
+def test_list_posts_marks_missing_preview_as_external(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    user = User(display_name="Test User", handle="test-user")
+    track = Track(
+        title="Canonical Track",
+        artist_name="Canonical Artist",
+    )
+    provider_track = ProviderTrack(
+        track=track,
+        provider="spotify",
+        provider_track_id="spotify-track-1",
+        title="Spotify Track",
+        artist_name="Spotify Artist",
+        provider_url="https://open.spotify.com/track/spotify-track-1",
+        preview_url=None,
+        playback_id="spotify-track-1",
+        is_playable=True,
+    )
+    post = Post(
+        user=user,
+        track=track,
+        source_provider_track=provider_track,
+        item_type="track",
+        caption="external only",
+    )
+    db_session.add_all([user, track, provider_track, post])
+    db_session.commit()
+
+    response = client.get("/posts")
+
+    assert response.status_code == 200
+    playback = response.json()["items"][0]["playback"]
+    assert playback["provider"] == "spotify"
+    assert playback["playback_mode"] == "external"
 
 
 def test_list_posts_filters_by_before_cursor(

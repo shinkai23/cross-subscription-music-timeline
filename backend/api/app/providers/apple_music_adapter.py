@@ -70,6 +70,7 @@ class AppleMusicAdapter(MusicProviderAdapter):
                 album_name=item["attributes"].get("albumName"),
                 duration_ms=item["attributes"].get("durationInMillis"),
                 isrc=item["attributes"].get("isrc"),
+                artwork_url=self._build_artwork_url(item["attributes"].get("artwork")),
                 provider_url=item["attributes"].get("url"),
             )
             for item in data.get("results", {}).get("songs", {}).get("data", [])

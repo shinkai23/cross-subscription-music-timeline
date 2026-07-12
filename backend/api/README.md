@@ -2,7 +2,7 @@
 
 FastAPI, SQLAlchemy, Alembic, PostgreSQL を使う Backend API です。
 
-現在は曲投稿・試聴タイムラインのMVP基盤として、JWT認証、Provider連携基盤、再生メタデータ取得、canonical track model、投稿API、タイムライン取得を実装しています。
+現在は曲投稿・試聴タイムラインのMVP基盤として、JWT認証、handleによる開発用ログイン、Provider連携基盤、Spotify OAuth接続、再生メタデータ取得、canonical track model、投稿API、タイムライン取得を実装しています。
 
 検証用Backend API:
 
@@ -64,6 +64,26 @@ GET /health -> {"status":"ok"}
 GET /posts  -> {"items":[],"next_before":null}
 ```
 
+## MVP API
+
+現在のiOS MVPで主に利用するAPIです。
+
+```text
+POST /users
+POST /auth/dev-login
+GET  /me
+GET  /auth/spotify/authorize
+POST /auth/spotify/connect
+GET  /providers/{provider}/search/tracks?q=...
+GET  /providers/{provider}/tracks/{track_id}/playback
+POST /posts
+GET  /posts
+```
+
+`/auth/dev-login` はMVP/開発用です。本番では無効化または保護し、パスワード認証、OAuthログイン、token refreshなどの本番向け認証へ置き換える必要があります。
+
+`GET /posts` と `POST /posts` の投稿レスポンスには `playback` 情報を含めます。`playback_mode` は、Spotify previewがある場合は `preview`、previewがない場合とApple Musicでは `external` として扱います。
+
 ## テストと lint
 
 ```bash
@@ -99,3 +119,4 @@ tests/            pytest
 - 歌詞全文を保存しない。
 - Spotify / Apple Music をスクレイピングしない。
 - Provider token は暗号化して保存する。
+- Apple Developer Tokenは現MVPでは扱わない。

@@ -6,6 +6,8 @@
 import SwiftUI
 
 struct AccountHomeView: View {
+    @AppStorage("provider.spotify.providerUserId") private var spotifyProviderUserId = ""
+
     let signedInName: String
     let signInProvider: SignInProvider
     let themeMode: ThemeMode
@@ -20,6 +22,8 @@ struct AccountHomeView: View {
     let copy: Copybook
     let titleDesign: Font.Design
     let onOpenSettings: () -> Void
+    let onLogout: () -> Void
+    @State private var isShowingSpotifyConnect = false
 
     private var ownedItems: [Item] {
         items.filter(\.isOwnedByCurrentUser)
@@ -41,6 +45,8 @@ struct AccountHomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 profileHero
+                spotifyConnection
+                logoutButton
                 preferenceGrid
                 creatorSignalsCard
 
@@ -56,6 +62,11 @@ struct AccountHomeView: View {
                     ],
                     theme: theme
                 )
+            }
+        }
+        .sheet(isPresented: $isShowingSpotifyConnect) {
+            SpotifyConnectView { response in
+                spotifyProviderUserId = response.providerUserId
             }
         }
     }
@@ -138,6 +149,44 @@ struct AccountHomeView: View {
                 preferencePill(title: copy.notificationsTitle, value: notificationsEnabled ? copy.done : copy.notificationsOff)
             }
         }
+    }
+
+    private var spotifyConnection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ProviderConnectionStatusView(
+                providerName: "Spotify",
+                isConnected: isSpotifyConnected,
+                providerUserId: spotifyProviderUserId
+            )
+
+            Button {
+                isShowingSpotifyConnect = true
+            } label: {
+                Label(
+                    isSpotifyConnected ? "Reconnect Spotify" : "Connect Spotify",
+                    systemImage: "link"
+                )
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var logoutButton: some View {
+        Button(action: onLogout) {
+            Label("Log out", systemImage: "rectangle.portrait.and.arrow.right")
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }
+        .buttonStyle(.bordered)
+        .foregroundStyle(theme.primaryText)
+    }
+
+    private var isSpotifyConnected: Bool {
+        !spotifyProviderUserId.isEmpty
     }
 
     private func preferencePill(title: String, value: String) -> some View {

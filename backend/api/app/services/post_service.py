@@ -92,9 +92,9 @@ class PostService:
     def _build_playback_read(
         self,
         provider_track: ProviderTrack | None,
-    ) -> PostPlaybackRead | None:
+    ) -> PostPlaybackRead:
         if provider_track is None:
-            return None
+            raise ProviderTrackNotFoundError
 
         return PostPlaybackRead(
             provider=provider_track.provider,
@@ -108,4 +108,14 @@ class PostService:
             preview_url=provider_track.preview_url,
             playback_id=provider_track.playback_id,
             is_playable=provider_track.is_playable,
+            playback_mode=self._build_playback_mode(provider_track),
         )
+
+    def _build_playback_mode(self, provider_track: ProviderTrack) -> str:
+        if provider_track.provider == "apple_music":
+            return "external"
+
+        if provider_track.preview_url:
+            return "preview"
+
+        return "external"

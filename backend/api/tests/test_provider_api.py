@@ -50,6 +50,7 @@ class FakeProviderService:
                 album_name="Kid A",
                 duration_ms=251000,
                 isrc="GBAYE0000811",
+                artwork_url="https://example.com/artwork.jpg",
                 provider_url="https://open.spotify.com/track/track-1",
             )
         ]
@@ -232,6 +233,7 @@ def test_search_tracks(client: TestClient, db_session: Session) -> None:
             "album_name": "Kid A",
             "duration_ms": 251000,
             "isrc": "GBAYE0000811",
+            "artwork_url": "https://example.com/artwork.jpg",
             "provider_url": "https://open.spotify.com/track/track-1",
         }
     ]
@@ -396,6 +398,7 @@ def test_get_playlist(client: TestClient, db_session: Session) -> None:
                 "album_name": None,
                 "duration_ms": None,
                 "isrc": None,
+                "artwork_url": None,
                 "provider_url": None,
             }
         ],

@@ -64,6 +64,11 @@ async def test_search_tracks_maps_apple_music_response(monkeypatch) -> None:
                                     "albumName": "Kid A",
                                     "durationInMillis": 251000,
                                     "isrc": "GBAYE0000811",
+                                    "artwork": {
+                                        "url": "https://is1-ssl.mzstatic.com/image/{w}x{h}bb.jpg",
+                                        "width": 600,
+                                        "height": 600,
+                                    },
                                     "url": "https://music.apple.com/song/1",
                                 },
                             }
@@ -95,6 +100,10 @@ async def test_search_tracks_maps_apple_music_response(monkeypatch) -> None:
     assert tracks[0].album_name == "Kid A"
     assert tracks[0].duration_ms == 251000
     assert tracks[0].isrc == "GBAYE0000811"
+    assert (
+        tracks[0].artwork_url
+        == "https://is1-ssl.mzstatic.com/image/600x600bb.jpg"
+    )
     assert tracks[0].provider_url == "https://music.apple.com/song/1"
 
 

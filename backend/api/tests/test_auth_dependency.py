@@ -88,8 +88,13 @@ def test_get_current_user_returns_user(
     assert response.json() == {"id": user.id, "handle": "test-user"}
 
 
-def test_get_current_user_rejects_missing_user() -> None:
+def test_get_current_user_rejects_missing_user(db_session: Session) -> None:
     app = FastAPI()
+
+    def override_get_db() -> Session:
+        return db_session
+
+    app.dependency_overrides[get_db] = override_get_db
 
     @app.get("/me")
     def read_me(current_user: User = Depends(get_current_user)) -> dict[str, str]:

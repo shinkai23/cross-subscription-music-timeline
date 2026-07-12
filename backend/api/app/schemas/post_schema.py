@@ -22,6 +22,7 @@ class PostPlaybackRead(BaseModel):
     preview_url: str | None = None
     playback_id: str | None = None
     is_playable: bool
+    playback_mode: str | None = None
 
 
 class PostRead(BaseModel):
@@ -33,7 +34,7 @@ class PostRead(BaseModel):
     caption: str | None
     visibility: str
     created_at: datetime
-    playback: PostPlaybackRead | None = None
+    playback: PostPlaybackRead
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -16,6 +16,7 @@ class ProviderTrack(BaseModel):
     album_name: str | None = None
     duration_ms: int | None = None
     isrc: str | None = None
+    artwork_url: str | None = None
     provider_url: str | None = None
 
 

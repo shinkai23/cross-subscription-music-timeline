@@ -11,7 +11,6 @@ import SwiftData
 struct ContentView: View {
     @AppStorage("themeMode") private var themeModeRawValue = ThemeMode.system.rawValue
     @AppStorage("appLanguage") private var appLanguageRawValue = AppLanguage.english.rawValue
-    @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("signedInName") private var signedInName = ""
     @AppStorage("signInProvider") private var signInProviderRawValue = SignInProvider.apple.rawValue
     @AppStorage("fontStyle") private var fontStyleRawValue = FontStyleOption.rounded.rawValue
@@ -21,16 +20,16 @@ struct ContentView: View {
     @AppStorage("weeklyDigestEnabled") private var weeklyDigestEnabled = false
 
     @Environment(\.colorScheme) private var systemColorScheme
-    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var authSession: AuthSession
     @Query(sort: \Item.playedAt, order: .reverse) private var items: [Item]
 
     @State private var selectedRootTab: RootTab = .home
-    @State private var selectedFeedTab: FeedTab = .recommended
     @State private var isShowingSearchScreen = false
-    @State private var isShowingComposer = false
+    @State private var isShowingTrackSearch = false
     @State private var isShowingSettings = false
     @State private var searchText = ""
     @State private var bottomBarHiddenProgress: CGFloat = 0
+    @State private var timelineRefreshTrigger = 0
 
     private var themeMode: ThemeMode {
         ThemeMode(rawValue: themeModeRawValue) ?? .system
@@ -73,42 +72,22 @@ struct ContentView: View {
                 activeTheme.background
                     .ignoresSafeArea()
 
-                if hasCompletedSetup {
+                if authSession.isRestoring {
+                    ProgressView()
+                } else if authSession.isAuthenticated {
                     currentScreen
                 } else {
-                    SetupView(
-                        themeMode: Binding(
-                            get: { themeMode },
-                            set: { themeModeRawValue = $0.rawValue }
-                        ),
-                        language: Binding(
-                            get: { appLanguage },
-                            set: { appLanguageRawValue = $0.rawValue }
-                        ),
-                        signedInName: $signedInName,
-                        signInProvider: Binding(
-                            get: { signInProvider },
-                            set: { signInProviderRawValue = $0.rawValue }
-                        ),
-                        theme: activeTheme,
-                        copy: copy,
-                        titleDesign: titleDesign
-                    ) {
-                        hasCompletedSetup = true
-                        if items.isEmpty {
-                            insertSampleTimeline()
-                        }
-                    }
+                    AuthView()
                 }
 
-                if hasCompletedSetup {
+                if authSession.isAuthenticated {
                     BottomTabBar(
                         selectedTab: $selectedRootTab,
                         theme: activeTheme,
                         copy: copy,
                         hiddenProgress: bottomBarHiddenProgress
                     ) {
-                        isShowingComposer = true
+                        isShowingTrackSearch = true
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 10)
@@ -128,13 +107,10 @@ struct ContentView: View {
                 titleDesign: titleDesign
             )
         }
-        .sheet(isPresented: $isShowingComposer) {
-            ComposerView(
-                signedInName: signedInName,
-                theme: activeTheme,
-                copy: copy
-            ) { draft in
-                submitPost(draft)
+        .sheet(isPresented: $isShowingTrackSearch) {
+            TrackSearchView { _ in
+                selectedRootTab = .home
+                timelineRefreshTrigger += 1
             }
         }
         .sheet(isPresented: $isShowingSettings) {
@@ -171,20 +147,9 @@ struct ContentView: View {
     private var currentScreen: some View {
         switch selectedRootTab {
         case .home, .compose:
-            TimelineFeedScreen(
-                items: items,
-                selectedFeedTab: $selectedFeedTab,
-                theme: activeTheme,
-                copy: copy,
-                titleDesign: titleDesign,
-                signedInName: signedInName,
-                signInProvider: signInProvider,
-                onOpenSearch: { openSearch() },
-                onOpenSearchTerm: { term in
-                    openSearch(term: term)
-                },
-                onMetricsChange: { bottomBarHiddenProgress = $0 }
-            )
+            TimelineView(refreshTrigger: timelineRefreshTrigger) {
+                bottomBarHiddenProgress = $0
+            }
         case .likes:
             LikesHubView(
                 items: items,
@@ -195,7 +160,7 @@ struct ContentView: View {
             )
         case .account:
             AccountHomeView(
-                signedInName: signedInName,
+                signedInName: authSession.currentUser?.displayName ?? signedInName,
                 signInProvider: signInProvider,
                 themeMode: themeMode,
                 language: appLanguage,
@@ -208,7 +173,11 @@ struct ContentView: View {
                 theme: activeTheme,
                 copy: copy,
                 titleDesign: titleDesign,
-                onOpenSettings: { isShowingSettings = true }
+                onOpenSettings: { isShowingSettings = true },
+                onLogout: {
+                    UserDefaults.standard.removeObject(forKey: "provider.spotify.providerUserId")
+                    authSession.logout()
+                }
             )
             .padding(.horizontal, 16)
             .padding(.top, 12)
@@ -216,46 +185,6 @@ struct ContentView: View {
             .onAppear {
                 bottomBarHiddenProgress = 0
             }
-        }
-    }
-
-    private func insertSampleTimeline() {
-        withAnimation(.spring(duration: 0.4)) {
-            for item in Item.sampleTimeline {
-                modelContext.insert(item)
-            }
-        }
-    }
-
-    private func submitPost(_ draft: PostDraft) {
-        let trimmedName = signedInName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let posterName = trimmedName.isEmpty ? "@musicfan" : "@\(trimmedName)"
-        let item = Item(
-            serviceName: draft.serviceName,
-            postType: draft.postType,
-            title: draft.title,
-            creatorName: draft.artistName,
-            posterName: posterName,
-            metadataLine: draft.metadataLine,
-            caption: draft.caption,
-            tags: draft.tags,
-            isFromFollowing: true,
-            isNewRelease: draft.isNewRelease,
-            isLikedByUser: false,
-            isSavedByUser: false,
-            isOwnedByCurrentUser: true,
-            playedAt: .now,
-            likeCount: 0,
-            saveCount: 0,
-            commentCount: 0,
-            repostCount: 0,
-            shareCount: 0
-        )
-
-        withAnimation(.spring(duration: 0.3)) {
-            modelContext.insert(item)
-            selectedRootTab = .home
-            selectedFeedTab = draft.isNewRelease ? .newReleases : .recommended
         }
     }
 
@@ -279,8 +208,8 @@ struct ContentView: View {
     PreviewTimelineHome()
 }
 
-#Preview("First Setup") {
-    PreviewSetupScreen()
+#Preview("Auth") {
+    PreviewAuthScreen()
 }
 
 private struct PreviewTimelineHome: View {
@@ -292,11 +221,13 @@ private struct PreviewTimelineHome: View {
 
     var body: some View {
         ContentView()
+            .environmentObject(AuthSession.previewAuthenticated())
+            .defaultAppStorage(PreviewDefaults.store)
             .modelContainer(container)
     }
 }
 
-private struct PreviewSetupScreen: View {
+private struct PreviewAuthScreen: View {
     private let container: ModelContainer = PreviewData.makeContainer(withSamples: false)
 
     init() {
@@ -305,16 +236,19 @@ private struct PreviewSetupScreen: View {
 
     var body: some View {
         ContentView()
+            .environmentObject(AuthSession.previewUnauthenticated())
+            .defaultAppStorage(PreviewDefaults.store)
             .modelContainer(container)
     }
 }
 
 private enum PreviewDefaults {
+    static let store = UserDefaults(suiteName: "MusicTimelineApp.preview") ?? .standard
+
     static func applyTimelineState() {
-        let defaults = UserDefaults.standard
+        let defaults = store
         defaults.set(ThemeMode.dark.rawValue, forKey: "themeMode")
         defaults.set(AppLanguage.english.rawValue, forKey: "appLanguage")
-        defaults.set(true, forKey: "hasCompletedSetup")
         defaults.set("sinkaii", forKey: "signedInName")
         defaults.set(SignInProvider.spotify.rawValue, forKey: "signInProvider")
         defaults.set(FontStyleOption.rounded.rawValue, forKey: "fontStyle")
@@ -326,10 +260,9 @@ private enum PreviewDefaults {
     }
 
     static func applySetupState() {
-        let defaults = UserDefaults.standard
+        let defaults = store
         defaults.set(ThemeMode.light.rawValue, forKey: "themeMode")
         defaults.set(AppLanguage.japanese.rawValue, forKey: "appLanguage")
-        defaults.set(false, forKey: "hasCompletedSetup")
         defaults.set("", forKey: "signedInName")
         defaults.set(SignInProvider.apple.rawValue, forKey: "signInProvider")
         defaults.set(FontStyleOption.rounded.rawValue, forKey: "fontStyle")

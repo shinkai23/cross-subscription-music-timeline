@@ -100,11 +100,49 @@ Error:
 
 - `401`: JWTが無効
 
+## Auth
+
+### POST /auth/dev-login
+
+開発用ログインAPI。既存ユーザーのhandleから、そのユーザーIDをsubjectにしたJWTを発行する。
+
+本番認証ではない。MVP/ローカルデモ用。
+
+Headers:
+
+```http
+Content-Type: application/json
+```
+
+Body:
+
+```json
+{
+  "handle": "sinkaii"
+}
+```
+
+Response `200`:
+
+```json
+{
+  "access_token": "jwt-token",
+  "token_type": "bearer"
+}
+```
+
+Error:
+
+- `404`: handleに対応するユーザーが存在しない
+- `422`: request bodyが不正
+
 ## Spotify Auth
 
 ### GET /auth/spotify/authorize
 
 Spotify OAuth PKCE用の認可URL、state、code verifierを生成する。
+
+iOS MVPでは、この `authorization_url` をSafariで開き、callback URLまたは `code` / `state` を手動入力して `/auth/spotify/connect` に渡す。
 
 Headers:
 
@@ -155,6 +193,8 @@ Error:
 ### POST /auth/spotify/connect
 
 Spotifyアカウントを現在のユーザーに連携する。
+
+認可後に得た `code` と `state`、`/authorize` で取得した `code_verifier` と `expected_state` を送る。
 
 Headers:
 
@@ -263,6 +303,7 @@ Response `200`:
     "album_name": "Album Name",
     "duration_ms": 180000,
     "isrc": "JPXXX0000000",
+    "artwork_url": "https://...",
     "provider_url": "https://open.spotify.com/track/..."
   }
 ]
@@ -276,6 +317,12 @@ Error:
 ### GET /providers/{provider}/tracks/{track_id}/playback
 
 Provider上の曲IDから、タイムライン再生に必要なメタデータを取得し、DBに保存する。
+
+`GET /posts` / `POST /posts` の `playback.playback_mode` は現在以下の方針で返す。
+
+- Spotifyで `preview_url` がある場合: `preview`
+- Spotifyで `preview_url` がない場合: `external`
+- Apple Music: `external`
 
 Headers:
 
@@ -328,7 +375,19 @@ Response `200`:
   "provider": "spotify",
   "provider_playlist_id": "playlist-id",
   "title": "Playlist Title",
-  "tracks": [],
+  "tracks": [
+    {
+      "provider": "spotify",
+      "provider_track_id": "spotify-track-id",
+      "title": "Track Title",
+      "artist_name": "Artist Name",
+      "album_name": "Album Name",
+      "duration_ms": 180000,
+      "isrc": "JPXXX0000000",
+      "artwork_url": "https://...",
+      "provider_url": "https://open.spotify.com/track/..."
+    }
+  ],
   "provider_url": "https://open.spotify.com/playlist/..."
 }
 ```
@@ -437,7 +496,8 @@ Response `200`:
         "provider_url": "https://open.spotify.com/track/...",
         "preview_url": null,
         "playback_id": "spotify-track-id",
-        "is_playable": true
+        "is_playable": true,
+        "playback_mode": "external"
       }
     }
   ],
@@ -492,7 +552,8 @@ Response `201`:
     "provider_url": "https://open.spotify.com/track/...",
     "preview_url": null,
     "playback_id": "spotify-track-id",
-    "is_playable": true
+    "is_playable": true,
+    "playback_mode": "external"
   }
 }
 ```
