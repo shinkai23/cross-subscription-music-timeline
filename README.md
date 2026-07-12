@@ -2,7 +2,17 @@
 
 Apple Music と Spotify の間にある「共有しにくさ」を減らすための、iOS 重視の音楽投稿・試聴タイムラインアプリです。
 
-ユーザーは好きな曲を紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲で試聴したりできます。
+ユーザーは好きな曲を紹介文付きで投稿できます。タイムラインでは投稿された音楽が並び、受け手は自分が利用しているサブスクリプションサービスで楽曲を開いたり、可能な範囲で試聴したりできます。現在のMVPでは、iOSアプリから認証、Spotify接続、曲検索、投稿作成、Timeline表示、preview再生、provider外部遷移までを確認できます。
+
+## MVP Snapshot
+
+- Apple Music / Spotify間で曲を共有しにくい課題に対し、providerをまたいだ音楽投稿Timelineを作る。
+- `tracks` と `provider_tracks` を分離したcanonical track modelで、同一楽曲とprovider別メタデータを分けて扱う。
+- iOSはSwiftUIで、BackendはFastAPI + PostgreSQL + SQLAlchemy + Alembicで構成する。
+- BackendはDocker化し、AWS ECS Fargate / RDS PostgreSQL / Secrets Managerを前提に運用できる。
+- Apple Developer Program未登録でも動くMVPとして、Apple MusicはMusicKit再生ではなく `provider_url` による外部遷移を中心にする。
+- Spotifyは `preview_url` が存在する場合だけAVPlayerで30秒試聴できる。
+- 音源ファイルは保存・再配布せず、Spotify / Apple Musicをスクレイピングしない。
 
 ## 概要
 
@@ -14,7 +24,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 
 ## 技術構成
 
-- iOS: SwiftUI, MusicKit
+- iOS: SwiftUI, AVPlayer
 - Backend: FastAPI, SQLAlchemy, Alembic, PostgreSQL
 - Auth: JWT
 - Provider integration: Apple Music / Spotify adapter pattern
@@ -23,6 +33,112 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らすた�
 - DB: Amazon RDS PostgreSQL
 - Secrets: AWS Secrets Manager
 - CI: GitHub Actions, Python, pytest, ruff
+
+## Current MVP Status
+
+現在のiOS MVPでは、Apple Developer Program登録なしで確認できる範囲を優先しています。
+
+実装済み:
+
+- iOS SwiftUIアプリからBackend `GET /posts` を呼び出し、Timelineを表示する。
+- 投稿カードにartwork、title、artist、album、caption、providerを表示する。
+- Spotify `preview_url` がある場合のみ、AVPlayerで30秒試聴できる。
+- `provider_url` からSpotify / Apple MusicのアプリまたはWebへ外部遷移できる。
+- 曲検索、playback metadata取得、caption付き投稿作成、投稿成功後のTimeline再取得ができる。
+- ユーザー作成、handleによる開発用ログイン、JWT保存・復元、`GET /me` 検証、logoutができる。
+- Account画面からSpotify接続MVPを実行できる。
+- Spotify認可URLをSafariで開き、callback URLまたは `code` / `state` を手動入力して `POST /auth/spotify/connect` できる。
+- Account画面にSpotify接続状態を表示する。
+- Spotify未接続時は、検索・投稿画面から接続案内へ誘導する。
+
+現在の方針:
+
+- Spotify中心に、検索、投稿、preview再生、provider外部遷移までをMVPの主導線にする。
+- Apple MusicはMusicKit再生をまだ使わず、`provider_url` による外部遷移を基本にする。
+- Apple Developer Tokenはまだ扱わない。
+
+## Screenshots
+
+画像は `docs/images/` に配置します。実スクリーンショットがまだない場合でもREADMEが崩れないよう、同名のプレースホルダーPNGを置いています。実機またはSimulatorで撮影した画像に差し替えると、このセクションにそのまま反映されます。
+
+| Auth / Handle login | Timeline |
+| --- | --- |
+| ![Auth / Handle login](docs/images/auth.png) | ![Timeline](docs/images/timeline.png) |
+
+| Spotify connection | Track search |
+| --- | --- |
+| ![Spotify connection](docs/images/spotify-connect.png) | ![Track search](docs/images/track-search.png) |
+
+| Create post | Provider connection required |
+| --- | --- |
+| ![Create post](docs/images/create-post.png) | ![Provider connection required](docs/images/provider-required.png) |
+
+## iOS MVP Demo Flow
+
+1. Backendを起動する。
+2. iOSアプリを起動する。
+3. 未認証の場合はユーザーを作成する。
+4. handleでdev loginする。
+5. Account画面でSpotify接続を開始する。
+6. Spotify認可URLをSafariで開く。
+7. 認可後のcallback URL、または `code` / `state` をアプリに手動入力する。
+8. 曲検索画面でSpotifyの曲を検索する。
+9. 曲を選択し、caption付きで投稿する。
+10. 投稿成功後、Timelineに投稿が表示される。
+11. `preview_url` がある投稿は試聴できる。
+12. `provider_url` からSpotifyまたはApple Musicを開ける。
+
+## Local Backend Startup
+
+```bash
+cd backend/api
+uvicorn app.main:app --host 0.0.0.0 --port 4000 --reload
+```
+
+初回やDB schema更新後は、事前にPostgreSQLとmigrationを準備します。
+
+```bash
+docker compose up -d postgres
+cd backend/api
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+```
+
+## iOS Build
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+xcodebuild -project apps/ios/MusicTimelineApp.xcodeproj \
+  -target MusicTimelineApp \
+  -sdk iphonesimulator \
+  -quiet build
+```
+
+SimulatorではAPI base URLは `http://localhost:4000` を使います。実機では `apps/ios/MusicTimelineApp/Support/AppEnvironment.swift` の実機向けURL、またはSchemeの `API_BASE_URL` 環境変数を利用します。
+
+## Checks
+
+現在の確認結果:
+
+- `ruff check .`: passed
+- `pytest`: 150 passed
+- `xcodebuild` app target: passed
+- `xcodebuild` unit/UI test targets with Debug configuration: passed
+
+## Known Limitations
+
+- `/auth/dev-login` はMVP/開発用であり、本番認証ではない。
+- 本格的なパスワード認証、OAuthログイン、token refreshは未対応。
+- JWTはUserDefaults保存であり、Keychain保存は今後対応する。
+- Spotify OAuth callbackは手動入力方式。
+- `ASWebAuthenticationSession` とカスタムURLスキーム callback は未対応。
+- Provider接続状態は一部UserDefaults管理であり、本番ではprovider接続状態取得APIが必要。
+- Apple MusicのMusicKit再生は未対応。
+- Apple Developer Tokenは未使用。
+- Apple Musicは現時点では外部遷移中心。
+- Apple Music provider検索・playback APIはBackend設定やApple Developer Tokenがないと利用できない。
 
 ## デプロイ状況
 
@@ -147,7 +263,7 @@ posts.source_provider_track_id
 ## リポジトリ構成
 
 ```text
-apps/ios/              SwiftUI + MusicKit prototype
+apps/ios/              SwiftUI iOS MVP
 backend/api/           FastAPI + SQLAlchemy + Alembic API
 docs/                  requirements, database design, API spec
 .github/workflows/     CI
@@ -206,16 +322,22 @@ DBを使うテストはSQLiteのin-memory databaseを使います。
 - [要件定義](docs/product-requirements.md)
 - [DB設計書](docs/database-design.md)
 - [API仕様書](docs/api-spec.md)
+- [iOS MVPデモ手順](docs/ios-mvp-demo.md)
+- [ローカル開発手順](docs/local-development.md)
+- [MVP提出前チェックリスト](docs/mvp-release-checklist.md)
 - [AWS手動デプロイ手順](docs/aws-deployment.md)
 
 ## 現在の状態
 
-- iOS は SwiftUI prototype を保持。
+- iOS は SwiftUI MVPとして、認証、Timeline、検索、投稿、Spotify接続導線を実装済み。
 - Backend は FastAPI + SQLAlchemy + Alembic + PostgreSQL 構成へ移行済み。
 - Backend は AWS ECS Fargate に手動デプロイ済み。
 - ALB 経由で `/health` と `/posts` の動作を確認済み。
 - RDS PostgreSQL に対して Alembic migration を適用済み。
 - JWT認証、ユーザー作成、投稿API、Provider adapter、Spotify OAuth、Apple Music連携基盤を実装。
+- handleによる開発用ログインAPI `/auth/dev-login` を実装。
+- iOSからユーザー作成、dev login、JWT保存・復元、`/me` 検証、logoutが可能。
+- iOSからSpotify接続MVP、曲検索、playback取得、caption付き投稿作成が可能。
 - `tracks` / `provider_tracks` / `posts` による canonical track model を導入。
 - タイムライン投稿に provider playback metadata を含める基盤を実装。
 - pytest / ruff による検証を整備。

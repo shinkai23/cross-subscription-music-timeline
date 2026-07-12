@@ -15,9 +15,9 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らす。
 ## MVPスコープ
 
 - ユーザー作成
-- JWT認証
-- Spotifyアカウント連携
-- Apple Musicアカウント連携
+- handleによる開発用ログイン
+- JWT認証、JWT保存・復元、`/me` 検証、logout
+- Spotifyアカウント連携MVP
 - Apple Music / Spotify adapter pattern
 - 曲検索
 - 曲の再生メタデータ取得
@@ -25,6 +25,40 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らす。
 - 曲投稿
 - タイムライン取得
 - タイムライン上の試聴情報表示
+- provider URLによる外部遷移
+
+## MVP達成済み項目
+
+- iOS Timeline表示
+- Backend `GET /posts` 取得
+- 曲投稿カード表示
+- artwork / title / artist / album / caption / provider 表示
+- Spotify `preview_url` がある場合のAVPlayer試聴
+- `provider_url` によるSpotify / Apple Music外部遷移
+- 曲検索
+- playback metadata取得
+- caption付き投稿作成
+- 投稿成功後のTimeline再取得
+- ユーザー作成
+- handleによる開発用ログイン
+- JWT保存・復元
+- `/me` 検証
+- logout
+- Spotify接続MVP
+- SafariでSpotify認可URLを開く
+- callback URLまたは `code` / `state` の手動入力
+- `POST /auth/spotify/connect`
+- Account画面でSpotify接続状態表示
+
+## 現在のMVP方針
+
+Apple Developer Program未登録でも進められるように、初期MVPはSpotify中心で進める。
+
+- Spotifyは検索、OAuth接続、playback metadata取得、`preview_url` がある場合の30秒試聴を優先する。
+- Apple Musicは現時点では `provider_url` による外部遷移を基本にする。
+- Apple Developer Tokenはまだ使わない。
+- MusicKitによるApple Music自動再生はまだ実装しない。
+- `playback_mode` は `preview` / `external` を返し、将来MusicKitや別再生方式へ差し替えやすくする。
 
 ## ユーザーストーリー
 
@@ -105,6 +139,14 @@ ISRCがない曲でも、同じプロバイダー上の同じ曲を再取得し�
 
 MVPでは以下を対象外とする。
 
+- 本番パスワード認証
+- OAuthログインによるアプリ認証
+- KeychainによるJWT保存
+- ASWebAuthenticationSessionによるSpotify callback自動処理
+- Provider接続状態取得API
+- Apple Music MusicKit再生
+- Apple Developer Tokenを使うApple Music API運用
+- Apple Musicアカウント連携UI
 - フォロー中ユーザーのタイムライン
 - アルバム投稿
 - プレイリスト投稿

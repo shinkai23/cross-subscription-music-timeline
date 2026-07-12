@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct MusicTimelineAppApp: App {
+    @StateObject private var authSession = AuthSession()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -26,6 +28,10 @@ struct MusicTimelineAppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authSession)
+                .task {
+                    await authSession.restore()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

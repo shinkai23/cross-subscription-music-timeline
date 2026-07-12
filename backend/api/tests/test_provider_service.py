@@ -73,6 +73,7 @@ class FakeAdapter:
                 provider_track_id="track-1",
                 title="Everything In Its Right Place",
                 artist_name="Radiohead",
+                artwork_url="https://example.com/search-artwork.jpg",
             )
         ]
 
@@ -152,6 +153,7 @@ async def test_search_tracks_calls_provider_adapter(monkeypatch) -> None:
     assert len(tracks) == 1
     assert tracks[0].provider == "fake"
     assert tracks[0].provider_track_id == "track-1"
+    assert tracks[0].artwork_url == "https://example.com/search-artwork.jpg"
 
 
 @pytest.mark.anyio
