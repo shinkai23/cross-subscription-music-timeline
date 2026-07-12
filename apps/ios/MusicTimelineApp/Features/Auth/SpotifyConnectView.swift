@@ -44,16 +44,23 @@ struct SpotifyConnectView: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Open Spotify Authorization")
+                            Text("Open Spotify Authorization in Safari")
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .disabled(isLoadingAuthorization || isConnecting)
 
                     if let authorization {
-                        Text("Expected state: \(authorization.state)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("After Spotify redirects, copy the full callback URL from Safari and paste it below. If the page itself is blank or localhost-only, the address bar still contains the code and state.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+
+                            Text("Expected state: \(authorization.state)")
+                                .font(.footnote.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
                     }
                 }
 
@@ -66,6 +73,12 @@ struct SpotifyConnectView: View {
                             .onChange(of: callbackURL) {
                                 parseCallbackURL()
                             }
+
+                        #if canImport(UIKit)
+                        Button("Paste callback URL from clipboard") {
+                            pasteCallbackURLFromClipboard()
+                        }
+                        #endif
 
                         TextField("code", text: $code)
                             .textInputAutocapitalization(.never)
@@ -167,6 +180,11 @@ struct SpotifyConnectView: View {
             return
         }
 
+        if let spotifyError = queryItems.first(where: { $0.name == "error" })?.value {
+            errorMessage = "Spotify authorization failed: \(spotifyError)"
+            return
+        }
+
         if let parsedCode = queryItems.first(where: { $0.name == "code" })?.value {
             code = parsedCode
         }
@@ -175,6 +193,18 @@ struct SpotifyConnectView: View {
             state = parsedState
         }
     }
+
+    #if canImport(UIKit)
+    private func pasteCallbackURLFromClipboard() {
+        guard let value = UIPasteboard.general.string, !value.isEmpty else {
+            errorMessage = "Clipboard does not contain a callback URL."
+            return
+        }
+
+        callbackURL = value
+        parseCallbackURL()
+    }
+    #endif
 
     private func openAuthorizationURL(_ value: String) {
         guard let url = URL(string: value) else {

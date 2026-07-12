@@ -144,6 +144,7 @@ MVPでは以下を対象外とする。
 - OAuthログインによるアプリ認証
 - KeychainによるJWT保存
 - ASWebAuthenticationSessionによるSpotify callback自動処理
+  - 導入時はSpotify Developer Dashboard、Backend `SPOTIFY_REDIRECT_URI`、iOS URL schemeを `musictimeline://auth/spotify/callback` などに揃える。
 - Apple Music MusicKit再生
 - Apple Developer Tokenを使うApple Music API運用
 - Apple Musicアカウント連携UI
