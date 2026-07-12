@@ -102,6 +102,12 @@ final class APIClient {
         return try JSONDecoder().decode(UserDTO.self, from: data)
     }
 
+    func fetchProviderAccounts() async throws -> ProviderAccountsResponseDTO {
+        let request = makeRequest(path: "me/provider-accounts")
+        let data = try await send(request)
+        return try JSONDecoder().decode(ProviderAccountsResponseDTO.self, from: data)
+    }
+
     func devLogin(handle: String) async throws -> AuthTokenDTO {
         var request = makeRequest(path: "auth/dev-login")
         request.httpMethod = "POST"

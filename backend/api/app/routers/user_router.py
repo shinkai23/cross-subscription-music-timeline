@@ -4,8 +4,14 @@ from sqlalchemy.orm import Session
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
 from app.models.user import User
+from app.repositories.service_account_repository import ServiceAccountRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.user_schema import UserCreate, UserRead
+from app.schemas.user_schema import (
+    ProviderAccountRead,
+    ProviderAccountsRead,
+    UserCreate,
+    UserRead,
+)
 from app.services.user_service import DuplicateUserHandleError, UserService
 
 
@@ -33,3 +39,23 @@ def create_user(
 @router.get("/me", response_model=UserRead)
 def read_me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/me/provider-accounts", response_model=ProviderAccountsRead)
+def read_my_provider_accounts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProviderAccountsRead:
+    repository = ServiceAccountRepository(db)
+    service_accounts = repository.list_connected_by_user_id(current_user.id)
+    return ProviderAccountsRead(
+        items=[
+            ProviderAccountRead(
+                provider=service_account.provider,
+                provider_user_id=service_account.provider_user_id,
+                connected=True,
+                created_at=service_account.created_at,
+            )
+            for service_account in service_accounts
+        ]
+    )

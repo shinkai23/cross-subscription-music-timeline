@@ -6,8 +6,6 @@
 import SwiftUI
 
 struct AccountHomeView: View {
-    @AppStorage("provider.spotify.providerUserId") private var spotifyProviderUserId = ""
-
     let signedInName: String
     let signInProvider: SignInProvider
     let themeMode: ThemeMode
@@ -24,6 +22,9 @@ struct AccountHomeView: View {
     let onOpenSettings: () -> Void
     let onLogout: () -> Void
     @State private var isShowingSpotifyConnect = false
+    @State private var providerAccounts: [ProviderAccountDTO] = []
+    @State private var isLoadingProviderAccounts = false
+    @State private var providerAccountsError: String?
 
     private var ownedItems: [Item] {
         items.filter(\.isOwnedByCurrentUser)
@@ -66,8 +67,17 @@ struct AccountHomeView: View {
         }
         .sheet(isPresented: $isShowingSpotifyConnect) {
             SpotifyConnectView { response in
-                spotifyProviderUserId = response.providerUserId
+                UserDefaults.standard.set(
+                    response.providerUserId,
+                    forKey: "provider.spotify.providerUserId"
+                )
+                Task {
+                    await loadProviderAccounts()
+                }
             }
+        }
+        .task {
+            await loadProviderAccounts()
         }
     }
 
@@ -159,6 +169,17 @@ struct AccountHomeView: View {
                 providerUserId: spotifyProviderUserId
             )
 
+            if isLoadingProviderAccounts {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if let providerAccountsError {
+                Text(providerAccountsError)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+
             Button {
                 isShowingSpotifyConnect = true
             } label: {
@@ -186,7 +207,38 @@ struct AccountHomeView: View {
     }
 
     private var isSpotifyConnected: Bool {
-        !spotifyProviderUserId.isEmpty
+        spotifyAccount?.connected == true
+    }
+
+    private var spotifyProviderUserId: String? {
+        spotifyAccount?.providerUserId
+    }
+
+    private var spotifyAccount: ProviderAccountDTO? {
+        providerAccounts.first { $0.provider == "spotify" }
+    }
+
+    @MainActor
+    private func loadProviderAccounts() async {
+        isLoadingProviderAccounts = true
+        providerAccountsError = nil
+
+        do {
+            let response = try await APIClient.shared.fetchProviderAccounts()
+            providerAccounts = response.items
+            if let spotifyProviderUserId {
+                UserDefaults.standard.set(
+                    spotifyProviderUserId,
+                    forKey: "provider.spotify.providerUserId"
+                )
+            } else {
+                UserDefaults.standard.removeObject(forKey: "provider.spotify.providerUserId")
+            }
+        } catch {
+            providerAccountsError = error.localizedDescription
+        }
+
+        isLoadingProviderAccounts = false
     }
 
     private func preferencePill(title: String, value: String) -> some View {
