@@ -131,7 +131,7 @@ SimulatorではAPI base URLは `http://localhost:4000` を使います。実機�
 
 - `/auth/dev-login` はMVP/開発用であり、本番認証ではない。
 - 本格的なパスワード認証、OAuthログイン、token refreshは未対応。
-- JWTはUserDefaults保存であり、Keychain保存は今後対応する。
+- JWTはKeychainに保存する。既存のUserDefaults保存tokenは起動時にKeychainへ移行して削除する。
 - Spotify OAuth callbackは手動入力方式。
 - `ASWebAuthenticationSession` とカスタムURLスキーム callback は未対応。導入時はSpotify DashboardとBackend redirect URIの変更が必要。
 - Provider接続状態は `GET /me/provider-accounts` で取得する。検索・投稿retry補助のため、一部UserDefaults同期は残している。

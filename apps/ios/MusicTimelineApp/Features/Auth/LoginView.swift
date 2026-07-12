@@ -74,6 +74,12 @@ struct LoginView: View {
 #Preview("Dev Login") {
     NavigationStack {
         LoginView()
-            .environmentObject(AuthSession())
+            .environmentObject(
+                AuthSession(
+                    apiClient: APIClient(),
+                    tokenStore: InMemoryAuthTokenStore(),
+                    legacyDefaults: UserDefaults(suiteName: "MusicTimelineApp.preview") ?? .standard
+                )
+            )
     }
 }

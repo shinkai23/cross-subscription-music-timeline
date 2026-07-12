@@ -78,5 +78,11 @@ struct AuthView: View {
 
 #Preview("Auth") {
     AuthView()
-        .environmentObject(AuthSession())
+        .environmentObject(
+            AuthSession(
+                apiClient: APIClient(),
+                tokenStore: InMemoryAuthTokenStore(),
+                legacyDefaults: UserDefaults(suiteName: "MusicTimelineApp.preview") ?? .standard
+            )
+        )
 }

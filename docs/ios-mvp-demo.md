@@ -75,7 +75,7 @@ README掲載用の画像は `docs/images/` に配置する。現在はREADMEが�
 - `/auth/dev-login` は開発用。
 - Spotify callbackは手動入力方式。
 - `ASWebAuthenticationSession` は未対応。導入時はSpotify DashboardとBackend redirect URIの変更が必要。
-- JWTはUserDefaults保存。
+- JWTはKeychain保存。既存UserDefaults tokenは起動時にKeychainへ移行して削除する。
 - Provider接続状態は一部UserDefaults管理。
 - Apple Musicは外部遷移中心。
 - MusicKit再生とApple Developer Tokenは未対応。

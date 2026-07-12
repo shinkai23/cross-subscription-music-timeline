@@ -16,7 +16,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らす。
 
 - ユーザー作成
 - handleによる開発用ログイン
-- JWT認証、JWT保存・復元、`/me` 検証、logout
+- JWT認証、Keychain保存・復元、`/me` 検証、logout
 - Spotifyアカウント連携MVP
 - Apple Music / Spotify adapter pattern
 - 曲検索
@@ -41,7 +41,7 @@ Apple Music と Spotify の間にある「共有しにくさ」を減らす。
 - 投稿成功後のTimeline再取得
 - ユーザー作成
 - handleによる開発用ログイン
-- JWT保存・復元
+- JWT Keychain保存・復元
 - `/me` 検証
 - logout
 - Spotify接続MVP
@@ -142,7 +142,6 @@ MVPでは以下を対象外とする。
 
 - 本番パスワード認証
 - OAuthログインによるアプリ認証
-- KeychainによるJWT保存
 - ASWebAuthenticationSessionによるSpotify callback自動処理
   - 導入時はSpotify Developer Dashboard、Backend `SPOTIFY_REDIRECT_URI`、iOS URL schemeを `musictimeline://auth/spotify/callback` などに揃える。
 - Apple Music MusicKit再生

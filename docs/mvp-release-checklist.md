@@ -15,7 +15,7 @@
 - [ ] 未認証時にAuth画面が表示される。
 - [ ] `display_name` / `handle` / `primary_provider` でユーザーを作成できる。
 - [ ] handle dev loginでJWTを取得できる。
-- [ ] 保存済みJWTをアプリ起動時に復元し、`GET /me` で検証できる。
+- [ ] Keychainに保存済みのJWTをアプリ起動時に復元し、`GET /me` で検証できる。
 - [ ] logoutでJWTとローカル接続状態がクリアされる。
 - [ ] Timelineで `GET /posts` の投稿一覧が表示される。
 - [ ] 投稿カードにartwork、曲名、artist、album、caption、providerが表示される。
@@ -116,7 +116,7 @@ git diff --check
 
 - `/auth/dev-login` はMVP/開発用であり、本番では無効化または保護が必要。
 - 本格的なパスワード認証、OAuthログイン、token refreshは未対応。
-- JWTはUserDefaults保存であり、Keychain保存は今後対応。
+- JWTはKeychain保存。既存UserDefaults tokenは起動時にKeychainへ移行して削除する。
 - Spotify OAuth callbackは手動入力方式。
 - `ASWebAuthenticationSession` とカスタムURLスキーム callback は未対応。
 - Provider接続状態は一部UserDefaults管理であり、本番ではprovider接続状態取得APIが必要。

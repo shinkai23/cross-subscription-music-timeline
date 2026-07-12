@@ -13,19 +13,22 @@ final class AuthSession: ObservableObject {
     @Published var authErrorMessage: String?
 
     private let apiClient: APIClient
-    private let defaults: UserDefaults
-    private let tokenKey = "auth.bearerToken"
+    private let tokenStore: AuthTokenStore
+    private let legacyDefaults: UserDefaults
+    private let legacyTokenKey = "auth.bearerToken"
 
-    convenience init(defaults: UserDefaults = .standard) {
-        self.init(apiClient: .shared, defaults: defaults)
+    convenience init() {
+        self.init(apiClient: .shared, tokenStore: KeychainAuthTokenStore())
     }
 
     init(
         apiClient: APIClient,
-        defaults: UserDefaults = .standard
+        tokenStore: AuthTokenStore,
+        legacyDefaults: UserDefaults = .standard
     ) {
         self.apiClient = apiClient
-        self.defaults = defaults
+        self.tokenStore = tokenStore
+        self.legacyDefaults = legacyDefaults
         apiClient.bearerToken = savedToken
     }
 
@@ -34,11 +37,11 @@ final class AuthSession: ObservableObject {
     }
 
     var savedToken: String? {
-        defaults.string(forKey: tokenKey)
+        tokenStore.readToken() ?? legacyDefaults.string(forKey: legacyTokenKey)
     }
 
     func restore() async {
-        guard let token = savedToken, !token.isEmpty else {
+        guard let token = migrateLegacyTokenIfNeeded(), !token.isEmpty else {
             apiClient.bearerToken = nil
             isRestoring = false
             return
@@ -46,7 +49,8 @@ final class AuthSession: ObservableObject {
 
         await signIn(with: token, persistToken: false)
         if !isAuthenticated {
-            defaults.removeObject(forKey: tokenKey)
+            tokenStore.deleteToken()
+            legacyDefaults.removeObject(forKey: legacyTokenKey)
         }
         isRestoring = false
     }
@@ -66,13 +70,19 @@ final class AuthSession: ObservableObject {
             let user = try await apiClient.fetchMe()
             currentUser = user
             if persistToken {
-                defaults.set(trimmedToken, forKey: tokenKey)
+                do {
+                    try tokenStore.saveToken(trimmedToken)
+                    legacyDefaults.removeObject(forKey: legacyTokenKey)
+                } catch {
+                    authErrorMessage = error.localizedDescription
+                }
             }
         } catch {
             currentUser = nil
             apiClient.bearerToken = nil
             if persistToken {
-                defaults.removeObject(forKey: tokenKey)
+                tokenStore.deleteToken()
+                legacyDefaults.removeObject(forKey: legacyTokenKey)
             }
             authErrorMessage = error.localizedDescription
         }
@@ -102,7 +112,29 @@ final class AuthSession: ObservableObject {
         currentUser = nil
         authErrorMessage = nil
         apiClient.bearerToken = nil
-        defaults.removeObject(forKey: tokenKey)
+        tokenStore.deleteToken()
+        legacyDefaults.removeObject(forKey: legacyTokenKey)
+    }
+
+    private func migrateLegacyTokenIfNeeded() -> String? {
+        if let keychainToken = tokenStore.readToken(), !keychainToken.isEmpty {
+            return keychainToken
+        }
+
+        guard let legacyToken = legacyDefaults.string(forKey: legacyTokenKey),
+              !legacyToken.isEmpty
+        else {
+            return nil
+        }
+
+        do {
+            try tokenStore.saveToken(legacyToken)
+            legacyDefaults.removeObject(forKey: legacyTokenKey)
+        } catch {
+            authErrorMessage = error.localizedDescription
+        }
+
+        return legacyToken
     }
 }
 
@@ -110,7 +142,8 @@ extension AuthSession {
     static func previewAuthenticated() -> AuthSession {
         let session = AuthSession(
             apiClient: APIClient(),
-            defaults: previewDefaults()
+            tokenStore: InMemoryAuthTokenStore(),
+            legacyDefaults: previewDefaults()
         )
         session.currentUser = UserDTO(
             id: "preview-user",
@@ -126,7 +159,8 @@ extension AuthSession {
     static func previewUnauthenticated() -> AuthSession {
         let session = AuthSession(
             apiClient: APIClient(),
-            defaults: previewDefaults()
+            tokenStore: InMemoryAuthTokenStore(),
+            legacyDefaults: previewDefaults()
         )
         session.currentUser = nil
         session.isRestoring = false

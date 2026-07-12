@@ -46,5 +46,5 @@ xcodebuild -project apps/ios/MusicTimelineApp.xcodeproj \
 - Apple Developer Tokenは未使用
 - Apple Musicは現時点では外部遷移中心
 - Spotify OAuth callbackはMVPとして手動入力方式
-- JWTはUserDefaults保存で、Keychain保存は今後対応
+- JWTはKeychain保存。既存UserDefaults tokenは起動時にKeychainへ移行して削除
 - Provider接続状態は一部UserDefaults管理で、本番では接続状態取得APIが必要
