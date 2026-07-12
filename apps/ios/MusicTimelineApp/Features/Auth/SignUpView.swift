@@ -112,6 +112,12 @@ struct SignUpView: View {
 #Preview("Sign Up") {
     NavigationStack {
         SignUpView {}
-            .environmentObject(AuthSession())
+            .environmentObject(
+                AuthSession(
+                    apiClient: APIClient(),
+                    tokenStore: InMemoryAuthTokenStore(),
+                    legacyDefaults: UserDefaults(suiteName: "MusicTimelineApp.preview") ?? .standard
+                )
+            )
     }
 }

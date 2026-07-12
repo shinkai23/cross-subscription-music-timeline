@@ -79,6 +79,12 @@ struct TokenInputView: View {
 #Preview("Token Input") {
     NavigationStack {
         TokenInputView()
-            .environmentObject(AuthSession())
+            .environmentObject(
+                AuthSession(
+                    apiClient: APIClient(),
+                    tokenStore: InMemoryAuthTokenStore(),
+                    legacyDefaults: UserDefaults(suiteName: "MusicTimelineApp.preview") ?? .standard
+                )
+            )
     }
 }
